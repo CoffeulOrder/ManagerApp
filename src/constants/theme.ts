@@ -1,55 +1,43 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Coffeul brand palette. The manager app always renders in the same warm dark
+ * theme as the customer app — there is no light mode.
  */
 
 import '@/global.css';
 
-import { Platform } from 'react-native';
-
 export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+  background: '#1B120B',
+  backgroundElevated: '#241811',
+  backgroundElement: '#2A1D14',
+  backgroundSelected: '#3A2A1C',
+  border: '#3D2C1F',
+
+  text: '#F5ECE1',
+  textSecondary: '#B9A691',
+  textMuted: '#8A7A6A',
+
+  accent: '#E8A659',
+  accentStrong: '#D89142',
+  accentText: '#241206',
+
+  danger: '#E1584A',
+  dangerBg: '#3A231F',
+  success: '#3CB878',
+  successBg: '#1E3327',
+  warning: '#E8C459',
+
+  kakao: '#FFCD00',
+  naver: '#2ECC71',
+  overlay: 'rgba(10, 6, 3, 0.6)',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColor = keyof typeof Colors;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export const Fonts = {
+  sans: 'system-ui',
+  serif: 'ui-serif',
+  mono: 'ui-monospace',
+};
 
 export const Spacing = {
   half: 2,
@@ -61,5 +49,11 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const Radius = {
+  small: 8,
+  medium: 12,
+  large: 16,
+  pill: 999,
+} as const;
+
+export const SidebarWidth = 232;
