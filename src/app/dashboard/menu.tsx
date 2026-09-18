@@ -7,9 +7,11 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { useApp } from '@/context/app-context';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import type { MenuItem } from '@/types';
 
 export default function MenuScreen() {
-  const { currentStore, categories, menuItems, addMenuItem, removeMenuItem, toggleSoldOut } = useApp();
+  const { currentStore, categories, menuItems, addMenuItem, removeMenuItem, updateMenuItem, toggleSoldOut } =
+    useApp();
 
   const storeCategories = useMemo(
     () => categories.filter((c) => c.storeId === currentStore?.id).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -23,16 +25,17 @@ export default function MenuScreen() {
     [menuItems, currentStore, activeCategory]
   );
 
-  const [modalVisible, setModalVisible] = useState(false);
+  // "메뉴 관리" modal: add new items to this category, or remove existing ones.
+  const [manageVisible, setManageVisible] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
 
-  function openModal() {
+  function openManage() {
     setName('');
     setDescription('');
     setPrice('');
-    setModalVisible(true);
+    setManageVisible(true);
   }
 
   function handleAdd() {
@@ -45,7 +48,37 @@ export default function MenuScreen() {
       description: description.trim(),
       price: parsedPrice,
     });
-    setModalVisible(false);
+    setName('');
+    setDescription('');
+    setPrice('');
+  }
+
+  // Action sheet shown when tapping a menu item: 수정 or 품절 처리.
+  const [actionItem, setActionItem] = useState<MenuItem | null>(null);
+
+  // "메뉴 수정" modal.
+  const [editItem, setEditItem] = useState<MenuItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+
+  function openEdit(item: MenuItem) {
+    setEditItem(item);
+    setEditName(item.name);
+    setEditDescription(item.description);
+    setEditPrice(String(item.price));
+    setActionItem(null);
+  }
+
+  function handleSaveEdit() {
+    const parsedPrice = Number(editPrice.replace(/[^0-9]/g, ''));
+    if (!editItem || !editName.trim() || !parsedPrice) return;
+    updateMenuItem(editItem.id, {
+      name: editName.trim(),
+      description: editDescription.trim(),
+      price: parsedPrice,
+    });
+    setEditItem(null);
   }
 
   return (
@@ -66,7 +99,7 @@ export default function MenuScreen() {
             );
           })}
         </ScrollView>
-        <Button label="+ 메뉴 추가" size="small" onPress={openModal} />
+        <Button label="메뉴 관리" size="small" onPress={openManage} />
       </View>
 
       <ScrollView contentContainerStyle={styles.grid}>
@@ -76,19 +109,11 @@ export default function MenuScreen() {
           </ThemedText>
         )}
         {items.map((item) => (
-          <View key={item.id} style={[styles.card, item.soldOut && styles.cardSoldOut]}>
-            <View style={styles.cardTopRow}>
-              <ThemedText type="subtitle" style={styles.cardName}>
-                {item.name}
-              </ThemedText>
-              <Pressable onPress={() => removeMenuItem(item.id)} hitSlop={8}>
-                <SymbolView
-                  name={{ ios: 'trash.fill', android: 'delete', web: 'delete' }}
-                  tintColor={Colors.danger}
-                  size={18}
-                />
-              </Pressable>
-            </View>
+          <Pressable
+            key={item.id}
+            style={[styles.card, item.soldOut && styles.cardSoldOut]}
+            onPress={() => setActionItem(item)}>
+            <ThemedText type="subtitle">{item.name}</ThemedText>
             <ThemedText type="small" color="textSecondary" numberOfLines={2}>
               {item.description}
             </ThemedText>
@@ -96,24 +121,62 @@ export default function MenuScreen() {
               <ThemedText type="price" color="accent">
                 {item.price.toLocaleString()}원
               </ThemedText>
-              <Pressable
-                style={[styles.soldOutToggle, item.soldOut && styles.soldOutToggleActive]}
-                onPress={() => toggleSoldOut(item.id)}>
+              <View style={[styles.soldOutBadge, item.soldOut && styles.soldOutBadgeActive]}>
                 <ThemedText type="label" color={item.soldOut ? 'text' : 'textSecondary'}>
                   {item.soldOut ? '품절' : '판매중'}
                 </ThemedText>
-              </Pressable>
+              </View>
             </View>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
 
-      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+      {/* 메뉴 아이템 액션 시트: 수정 / 품절 처리 */}
+      <Modal visible={!!actionItem} transparent animationType="fade" onRequestClose={() => setActionItem(null)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setActionItem(null)}>
+          <Pressable style={styles.actionSheet} onPress={(e) => e.stopPropagation()}>
+            <ThemedText type="subtitle" style={styles.actionSheetTitle}>
+              {actionItem?.name}
+            </ThemedText>
+            <Pressable style={styles.actionRow} onPress={() => actionItem && openEdit(actionItem)}>
+              <SymbolView
+                name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
+                tintColor={Colors.text}
+                size={18}
+              />
+              <ThemedText type="default">수정</ThemedText>
+            </Pressable>
+            <Pressable
+              style={styles.actionRow}
+              onPress={() => {
+                if (actionItem) toggleSoldOut(actionItem.id);
+                setActionItem(null);
+              }}>
+              <SymbolView
+                name={{ ios: 'exclamationmark.circle', android: 'block', web: 'block' }}
+                tintColor={Colors.danger}
+                size={18}
+              />
+              <ThemedText type="default" color="danger">
+                {actionItem?.soldOut ? '판매 재개' : '품절 처리'}
+              </ThemedText>
+            </Pressable>
+            <Pressable style={[styles.actionRow, styles.actionRowLast]} onPress={() => setActionItem(null)}>
+              <ThemedText type="default" color="textSecondary" style={styles.cancelLabel}>
+                취소
+              </ThemedText>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* 메뉴 관리: 이 카테고리에 메뉴 추가 / 삭제 */}
+      <Modal visible={manageVisible} transparent animationType="fade" onRequestClose={() => setManageVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <ThemedText type="subtitle">메뉴 추가</ThemedText>
+            <ThemedText type="subtitle">메뉴 관리</ThemedText>
             <ThemedText type="small" color="textSecondary" style={styles.modalCategory}>
-              {activeCategory?.name} 카테고리에 추가됩니다
+              {activeCategory?.name} 카테고리
             </ThemedText>
 
             <View style={styles.modalForm}>
@@ -131,11 +194,57 @@ export default function MenuScreen() {
                 value={price}
                 onChangeText={setPrice}
               />
+              <Button label="+ 메뉴 추가" onPress={handleAdd} />
+            </View>
+
+            <ThemedText type="smallBold" color="textSecondary" style={styles.manageListTitle}>
+              등록된 메뉴
+            </ThemedText>
+            <ScrollView style={styles.manageList}>
+              {items.length === 0 && (
+                <ThemedText type="small" color="textMuted">
+                  등록된 메뉴가 없습니다
+                </ThemedText>
+              )}
+              {items.map((item) => (
+                <View key={item.id} style={styles.manageRow}>
+                  <ThemedText type="small" style={styles.manageRowName} numberOfLines={1}>
+                    {item.name}
+                  </ThemedText>
+                  <ThemedText type="small" color="textSecondary">
+                    {item.price.toLocaleString()}원
+                  </ThemedText>
+                  <Pressable onPress={() => removeMenuItem(item.id)} hitSlop={8} style={styles.manageDeleteButton}>
+                    <SymbolView
+                      name={{ ios: 'trash.fill', android: 'delete', web: 'delete' }}
+                      tintColor={Colors.danger}
+                      size={16}
+                    />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+
+            <Button label="닫기" variant="secondary" style={styles.closeButton} onPress={() => setManageVisible(false)} />
+          </View>
+        </View>
+      </Modal>
+
+      {/* 메뉴 수정 */}
+      <Modal visible={!!editItem} transparent animationType="fade" onRequestClose={() => setEditItem(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <ThemedText type="subtitle">메뉴 수정</ThemedText>
+
+            <View style={styles.modalForm}>
+              <TextField label="메뉴명" value={editName} onChangeText={setEditName} />
+              <TextField label="설명" value={editDescription} onChangeText={setEditDescription} />
+              <TextField label="가격" keyboardType="numeric" value={editPrice} onChangeText={setEditPrice} />
             </View>
 
             <View style={styles.modalActions}>
-              <Button label="취소" variant="secondary" style={styles.modalButton} onPress={() => setModalVisible(false)} />
-              <Button label="추가" style={styles.modalButton} onPress={handleAdd} />
+              <Button label="취소" variant="secondary" style={styles.modalButton} onPress={() => setEditItem(null)} />
+              <Button label="저장" style={styles.modalButton} onPress={handleSaveEdit} />
             </View>
           </View>
         </View>
@@ -193,28 +302,19 @@ const styles = StyleSheet.create({
   cardSoldOut: {
     opacity: 0.55,
   },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  cardName: {
-    flex: 1,
-    marginRight: Spacing.two,
-  },
   cardBottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.two,
   },
-  soldOutToggle: {
+  soldOutBadge: {
     paddingVertical: Spacing.half,
     paddingHorizontal: Spacing.two,
     borderRadius: Radius.pill,
     backgroundColor: Colors.successBg,
   },
-  soldOutToggleActive: {
+  soldOutBadgeActive: {
     backgroundColor: Colors.dangerBg,
   },
   modalOverlay: {
@@ -223,8 +323,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  actionSheet: {
+    width: 300,
+    backgroundColor: Colors.backgroundElevated,
+    borderRadius: Radius.large,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
+  actionSheetTitle: {
+    textAlign: 'center',
+    paddingVertical: Spacing.three,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.three,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  actionRowLast: {
+    justifyContent: 'center',
+  },
+  cancelLabel: {
+    textAlign: 'center',
+    flex: 1,
+  },
   modalCard: {
     width: 420,
+    maxHeight: '85%',
     backgroundColor: Colors.backgroundElevated,
     borderRadius: Radius.large,
     borderWidth: 1,
@@ -245,5 +374,29 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  manageListTitle: {
+    marginTop: Spacing.five,
+    marginBottom: Spacing.one,
+  },
+  manageList: {
+    maxHeight: 180,
+  },
+  manageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  manageRowName: {
+    flex: 1,
+  },
+  manageDeleteButton: {
+    padding: Spacing.one,
+  },
+  closeButton: {
+    marginTop: Spacing.four,
   },
 });

@@ -39,6 +39,7 @@ type Action =
   | { type: 'SET_STORE_STATUS'; storeId: string; status: StoreStatus }
   | { type: 'ADD_MENU_ITEM'; item: MenuItem }
   | { type: 'REMOVE_MENU_ITEM'; id: string }
+  | { type: 'UPDATE_MENU_ITEM'; id: string; patch: Partial<Pick<MenuItem, 'name' | 'description' | 'price'>> }
   | { type: 'TOGGLE_SOLD_OUT'; id: string }
   | { type: 'SET_ORDER_STATUS'; id: string; status: OrderStatus; reason?: string };
 
@@ -65,6 +66,11 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, menuItems: [...state.menuItems, action.item] };
     case 'REMOVE_MENU_ITEM':
       return { ...state, menuItems: state.menuItems.filter((m) => m.id !== action.id) };
+    case 'UPDATE_MENU_ITEM':
+      return {
+        ...state,
+        menuItems: state.menuItems.map((m) => (m.id === action.id ? { ...m, ...action.patch } : m)),
+      };
     case 'TOGGLE_SOLD_OUT':
       return {
         ...state,
@@ -96,6 +102,7 @@ interface AppContextValue extends AppState {
   setStoreStatus: (storeId: string, status: StoreStatus) => void;
   addMenuItem: (item: Omit<MenuItem, 'id' | 'soldOut'>) => void;
   removeMenuItem: (id: string) => void;
+  updateMenuItem: (id: string, patch: Partial<Pick<MenuItem, 'name' | 'description' | 'price'>>) => void;
   toggleSoldOut: (id: string) => void;
   acceptOrder: (id: string) => void;
   rejectOrder: (id: string, reason?: string) => void;
@@ -148,6 +155,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const removeMenuItem = useCallback((id: string) => dispatch({ type: 'REMOVE_MENU_ITEM', id }), []);
+  const updateMenuItem = useCallback(
+    (id: string, patch: Partial<Pick<MenuItem, 'name' | 'description' | 'price'>>) =>
+      dispatch({ type: 'UPDATE_MENU_ITEM', id, patch }),
+    []
+  );
   const toggleSoldOut = useCallback((id: string) => dispatch({ type: 'TOGGLE_SOLD_OUT', id }), []);
   const acceptOrder = useCallback((id: string) => dispatch({ type: 'SET_ORDER_STATUS', id, status: 'MAKING' }), []);
   const rejectOrder = useCallback(
@@ -176,6 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setStoreStatus,
       addMenuItem,
       removeMenuItem,
+      updateMenuItem,
       toggleSoldOut,
       acceptOrder,
       rejectOrder,
@@ -192,6 +205,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setStoreStatus,
       addMenuItem,
       removeMenuItem,
+      updateMenuItem,
       toggleSoldOut,
       acceptOrder,
       rejectOrder,
