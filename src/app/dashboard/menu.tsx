@@ -6,22 +6,22 @@ import { Button } from '@/components/button';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { useApp } from '@/context/app-context';
+import { useToast } from '@/context/toast';
+import { MENU_CATEGORIES, MENU_CATEGORY_LABEL, type MenuCategory } from '@/constants/menu-category';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { MODAL_SWAP_DELAY, usePinGate } from '@/hooks/use-pin-gate';
+import { formatWon } from '@/lib/format';
 import type { MenuItem } from '@/types';
 
 export default function MenuScreen() {
-  const { currentStore, categories, menuItems, addMenuItem, removeMenuItem, updateMenuItem, toggleSoldOut } =
-    useApp();
+  const { currentStore, menuItems, addMenuItem, removeMenuItem, updateMenuItem, setSoldOutMany } = useApp();
+  const { requirePin, pinModal } = usePinGate();
+  const { showToast } = useToast();
 
-  const storeCategories = useMemo(
-    () => categories.filter((c) => c.storeId === currentStore?.id).sort((a, b) => a.sortOrder - b.sortOrder),
-    [categories, currentStore]
-  );
-  const [activeCategoryId, setActiveCategoryId] = useState(storeCategories[0]?.id ?? '');
-  const activeCategory = storeCategories.find((c) => c.id === activeCategoryId) ?? storeCategories[0];
+  const [activeCategory, setActiveCategory] = useState<MenuCategory>(MENU_CATEGORIES[0]);
 
   const items = useMemo(
-    () => menuItems.filter((m) => m.storeId === currentStore?.id && m.categoryId === activeCategory?.id),
+    () => menuItems.filter((m) => m.storeId === currentStore?.id && m.category === activeCategory),
     [menuItems, currentStore, activeCategory]
   );
 
@@ -40,10 +40,10 @@ export default function MenuScreen() {
 
   function handleAdd() {
     const parsedPrice = Number(price.replace(/[^0-9]/g, ''));
-    if (!name.trim() || !parsedPrice || !currentStore || !activeCategory) return;
+    if (!name.trim() || !parsedPrice || !currentStore) return;
     addMenuItem({
       storeId: currentStore.id,
-      categoryId: activeCategory.id,
+      category: activeCategory,
       name: name.trim(),
       description: description.trim(),
       price: parsedPrice,
@@ -51,6 +51,33 @@ export default function MenuScreen() {
     setName('');
     setDescription('');
     setPrice('');
+  }
+
+  // 일괄 품절: pick several menus (across categories) and sell them out or resume them in one go.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
+  }
+
+  function toggleSelectCategory() {
+    const ids = items.map((item) => item.id);
+    const allSelected = ids.every((id) => selectedIds.includes(id));
+    setSelectedIds((prev) => (allSelected ? prev.filter((id) => !ids.includes(id)) : [...new Set([...prev, ...ids])]));
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds([]);
+  }
+
+  function applySoldOut(ids: string[], soldOut: boolean) {
+    const { waitingOrders } = setSoldOutMany(ids, soldOut);
+    showToast(ids.length === 1 ? (soldOut ? '품절 처리했습니다' : '판매를 재개했습니다') : `${ids.length}개 메뉴를 ${soldOut ? '품절 처리' : '판매 재개'}했습니다`);
+    if (waitingOrders > 0) {
+      showToast(`접수 대기 주문 ${waitingOrders}건에 품절 처리한 메뉴가 포함되어 있습니다`, { durationMs: 4000 });
+    }
   }
 
   // Action sheet shown when tapping a menu item: 수정 or 품절 처리.
@@ -67,7 +94,11 @@ export default function MenuScreen() {
     setEditName(item.name);
     setEditDescription(item.description);
     setEditPrice(String(item.price));
+  }
+
+  function handleEditPress(item: MenuItem) {
     setActionItem(null);
+    setTimeout(() => requirePin(() => openEdit(item), '메뉴 수정'), MODAL_SWAP_DELAY);
   }
 
   function handleSaveEdit() {
@@ -85,22 +116,56 @@ export default function MenuScreen() {
     <View style={styles.screen}>
       <View style={styles.headerRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
-          {storeCategories.map((cat) => {
-            const active = cat.id === activeCategory?.id;
+          {MENU_CATEGORIES.map((category) => {
+            const active = category === activeCategory;
             return (
               <Pressable
-                key={cat.id}
+                key={category}
                 style={[styles.categoryPill, active && styles.categoryPillActive]}
-                onPress={() => setActiveCategoryId(cat.id)}>
+                onPress={() => setActiveCategory(category)}>
                 <ThemedText type="smallBold" color={active ? 'accentText' : 'textSecondary'}>
-                  {cat.name}
+                  {MENU_CATEGORY_LABEL[category]}
                 </ThemedText>
               </Pressable>
             );
           })}
         </ScrollView>
-        <Button label="메뉴 관리" size="small" onPress={openManage} />
+        <View style={styles.headerButtons}>
+          {!selectMode && (
+            <Button label="일괄 품절" variant="secondary" size="small" onPress={() => setSelectMode(true)} />
+          )}
+          <Button label="메뉴 관리" size="small" onPress={() => requirePin(openManage, '메뉴 관리')} />
+        </View>
       </View>
+
+      {selectMode && (
+        <View style={styles.selectBar}>
+          <ThemedText type="smallBold" style={styles.selectCount}>
+            {selectedIds.length}개 선택됨
+          </ThemedText>
+          <Button label="이 카테고리 전체 선택" variant="secondary" size="small" onPress={toggleSelectCategory} />
+          <Button
+            label="품절 처리"
+            variant="danger"
+            size="small"
+            disabled={selectedIds.length === 0}
+            onPress={() => {
+              applySoldOut(selectedIds, true);
+              exitSelectMode();
+            }}
+          />
+          <Button
+            label="판매 재개"
+            size="small"
+            disabled={selectedIds.length === 0}
+            onPress={() => {
+              applySoldOut(selectedIds, false);
+              exitSelectMode();
+            }}
+          />
+          <Button label="취소" variant="ghost" size="small" onPress={exitSelectMode} />
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.grid}>
         {items.length === 0 && (
@@ -112,14 +177,34 @@ export default function MenuScreen() {
           <Pressable
             key={item.id}
             style={[styles.card, item.soldOut && styles.cardSoldOut]}
-            onPress={() => setActionItem(item)}>
-            <ThemedText type="subtitle">{item.name}</ThemedText>
+            onPress={() => (selectMode ? toggleSelected(item.id) : setActionItem(item))}>
+            {selectMode && (
+              <View style={[styles.checkbox, selectedIds.includes(item.id) && styles.checkboxChecked]}>
+                {selectedIds.includes(item.id) && (
+                  <SymbolView
+                    name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                    tintColor={Colors.accentText}
+                    size={14}
+                  />
+                )}
+              </View>
+            )}
+            {item.isHot && (
+              <View style={[styles.hotBadge, selectMode && styles.hotBadgeShifted]}>
+                <ThemedText type="label" style={styles.hotBadgeText}>
+                  HOT
+                </ThemedText>
+              </View>
+            )}
+            <ThemedText type="subtitle" style={{ paddingRight: (item.isHot ? 44 : 0) + (selectMode ? 30 : 0) }}>
+              {item.name}
+            </ThemedText>
             <ThemedText type="small" color="textSecondary" numberOfLines={2}>
               {item.description}
             </ThemedText>
             <View style={styles.cardBottomRow}>
               <ThemedText type="price" color="accent">
-                {item.price.toLocaleString()}원
+                {formatWon(item.price)}
               </ThemedText>
               <View style={[styles.soldOutBadge, item.soldOut && styles.soldOutBadgeActive]}>
                 <ThemedText type="label" color={item.soldOut ? 'text' : 'textSecondary'}>
@@ -131,14 +216,14 @@ export default function MenuScreen() {
         ))}
       </ScrollView>
 
-      {/* 메뉴 아이템 액션 시트: 수정 / 품절 처리 */}
+      {/* 메뉴 아이템 액션 시트: 수정(2차 비밀번호) / 품절 처리 */}
       <Modal visible={!!actionItem} transparent animationType="fade" onRequestClose={() => setActionItem(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setActionItem(null)}>
           <Pressable style={styles.actionSheet} onPress={(e) => e.stopPropagation()}>
             <ThemedText type="subtitle" style={styles.actionSheetTitle}>
               {actionItem?.name}
             </ThemedText>
-            <Pressable style={styles.actionRow} onPress={() => actionItem && openEdit(actionItem)}>
+            <Pressable style={styles.actionRow} onPress={() => actionItem && handleEditPress(actionItem)}>
               <SymbolView
                 name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
                 tintColor={Colors.text}
@@ -149,7 +234,7 @@ export default function MenuScreen() {
             <Pressable
               style={styles.actionRow}
               onPress={() => {
-                if (actionItem) toggleSoldOut(actionItem.id);
+                if (actionItem) applySoldOut([actionItem.id], !actionItem.soldOut);
                 setActionItem(null);
               }}>
               <SymbolView
@@ -176,7 +261,7 @@ export default function MenuScreen() {
           <View style={styles.modalCard}>
             <ThemedText type="subtitle">메뉴 관리</ThemedText>
             <ThemedText type="small" color="textSecondary" style={styles.modalCategory}>
-              {activeCategory?.name} 카테고리
+              {MENU_CATEGORY_LABEL[activeCategory]} 카테고리
             </ThemedText>
 
             <View style={styles.modalForm}>
@@ -212,7 +297,7 @@ export default function MenuScreen() {
                     {item.name}
                   </ThemedText>
                   <ThemedText type="small" color="textSecondary">
-                    {item.price.toLocaleString()}원
+                    {formatWon(item.price)}
                   </ThemedText>
                   <Pressable onPress={() => removeMenuItem(item.id)} hitSlop={8} style={styles.manageDeleteButton}>
                     <SymbolView
@@ -249,6 +334,8 @@ export default function MenuScreen() {
           </View>
         </View>
       </Modal>
+
+      {pinModal}
     </View>
   );
 }
@@ -301,6 +388,60 @@ const styles = StyleSheet.create({
   },
   cardSoldOut: {
     opacity: 0.55,
+  },
+  hotBadge: {
+    position: 'absolute',
+    top: Spacing.three,
+    right: Spacing.three,
+    zIndex: 1,
+    backgroundColor: Colors.danger,
+    borderRadius: Radius.small,
+    paddingVertical: Spacing.half,
+    paddingHorizontal: Spacing.two,
+  },
+  hotBadgeShifted: {
+    right: Spacing.three + 32,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  selectBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginBottom: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.backgroundElevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  selectCount: {
+    flex: 1,
+  },
+  checkbox: {
+    position: 'absolute',
+    top: Spacing.three,
+    right: Spacing.three,
+    zIndex: 2,
+    width: 22,
+    height: 22,
+    borderRadius: Radius.small - 4,
+    borderWidth: 2,
+    borderColor: Colors.textMuted,
+    backgroundColor: Colors.backgroundElement,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  hotBadgeText: {
+    color: Colors.white,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   cardBottomRow: {
     flexDirection: 'row',

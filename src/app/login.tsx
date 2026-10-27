@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 
@@ -11,41 +11,21 @@ import { ThemedView } from '@/components/themed-view';
 import { useApp } from '@/context/app-context';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
-type Mode = 'login' | 'signup';
-
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, signup } = useApp();
-  const [mode, setMode] = useState<Mode>('login');
-  const [error, setError] = useState<string | null>(null);
-
-  const [email, setEmail] = useState('');
+  const { login } = useApp();
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
-  const [businessName, setBusinessName] = useState('');
-  const [representative, setRepresentative] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   function handleSubmit() {
     setError(null);
-    if (mode === 'login') {
-      const result = login(email.trim(), password);
-      if (!result.ok) return setError(result.message ?? '로그인에 실패했습니다.');
-      router.replace('/store-select');
+    const result = login(loginId.trim(), password);
+    if (!result.ok) {
+      setError(result.message ?? '로그인에 실패했습니다.');
       return;
     }
-
-    if (password !== confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    const result = signup({
-      businessName: businessName.trim(),
-      representative: representative.trim(),
-      email: email.trim(),
-      password,
-    });
-    if (!result.ok) return setError(result.message ?? '회원가입에 실패했습니다.');
-    router.replace('/store-select');
+    router.replace('/dashboard');
   }
 
   return (
@@ -62,77 +42,31 @@ export default function LoginScreen() {
                 />
               </View>
               <ThemedText type="title" style={styles.brand}>
-                Coffeul
+                ORMO
               </ThemedText>
               <ThemedText type="small" color="textSecondary">
                 매장 관리자 시스템
               </ThemedText>
             </View>
 
-            <View style={styles.tabRow}>
-              <Pressable
-                style={[styles.tab, mode === 'login' && styles.tabActive]}
-                onPress={() => {
-                  setMode('login');
-                  setError(null);
-                }}>
-                <ThemedText type="smallBold" color={mode === 'login' ? 'accentText' : 'textSecondary'}>
-                  로그인
-                </ThemedText>
-              </Pressable>
-              <Pressable
-                style={[styles.tab, mode === 'signup' && styles.tabActive]}
-                onPress={() => {
-                  setMode('signup');
-                  setError(null);
-                }}>
-                <ThemedText type="smallBold" color={mode === 'signup' ? 'accentText' : 'textSecondary'}>
-                  회원가입
-                </ThemedText>
-              </Pressable>
-            </View>
-
             <View style={styles.form}>
-              {mode === 'signup' && (
-                <>
-                  <TextField
-                    label="상호명"
-                    placeholder="커풀 을지대점"
-                    value={businessName}
-                    onChangeText={setBusinessName}
-                  />
-                  <TextField
-                    label="대표자명"
-                    placeholder="홍길동"
-                    value={representative}
-                    onChangeText={setRepresentative}
-                  />
-                </>
-              )}
               <TextField
-                label="이메일"
-                placeholder="brew@example.com"
+                label="아이디"
+                placeholder="지점 계정 아이디"
                 autoCapitalize="none"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
+                autoCorrect={false}
+                value={loginId}
+                onChangeText={setLoginId}
               />
               <TextField
                 label="비밀번호"
                 placeholder="••••••••"
                 secureTextEntry
+                returnKeyType="done"
                 value={password}
                 onChangeText={setPassword}
+                onSubmitEditing={handleSubmit}
               />
-              {mode === 'signup' && (
-                <TextField
-                  label="비밀번호 확인"
-                  placeholder="••••••••"
-                  secureTextEntry
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                />
-              )}
 
               {error && (
                 <ThemedText type="small" color="danger">
@@ -140,28 +74,17 @@ export default function LoginScreen() {
                 </ThemedText>
               )}
 
-              <Button label={mode === 'login' ? '로그인' : '회원가입'} onPress={handleSubmit} style={styles.submit} />
-
-              {mode === 'login' ? (
-                <ThemedText type="small" color="textSecondary" style={styles.footer}>
-                  계정이 없으신가요?{' '}
-                  <ThemedText type="smallBold" color="accent" onPress={() => setMode('signup')}>
-                    회원가입
-                  </ThemedText>
-                </ThemedText>
-              ) : (
-                <ThemedText type="small" color="textSecondary" style={styles.footer}>
-                  이미 계정이 있으신가요?{' '}
-                  <ThemedText type="smallBold" color="accent" onPress={() => setMode('login')}>
-                    로그인
-                  </ThemedText>
-                </ThemedText>
-              )}
+              <Button label="로그인" onPress={handleSubmit} style={styles.submit} />
             </View>
 
-            <ThemedText type="small" color="textMuted" style={styles.demoHint}>
-              데모 계정: brew@example.com / password
-            </ThemedText>
+            <View style={styles.hints}>
+              <ThemedText type="small" color="textSecondary" style={styles.hint}>
+                계정은 지점당 1개이며 ORMO 운영팀에서 발급합니다.
+              </ThemedText>
+              <ThemedText type="small" color="textMuted" style={styles.hint}>
+                데모 계정: beomseok / password
+              </ThemedText>
+            </View>
           </SafeAreaView>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -202,23 +125,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   brand: {
-    fontFamily: 'ui-serif',
-  },
-  tabRow: {
-    flexDirection: 'row',
-    backgroundColor: Colors.backgroundElement,
-    borderRadius: Radius.medium,
-    padding: Spacing.half,
-    gap: Spacing.half,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: Spacing.three,
-    alignItems: 'center',
-    borderRadius: Radius.medium - 2,
-  },
-  tabActive: {
-    backgroundColor: Colors.accent,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   form: {
     gap: Spacing.three,
@@ -226,10 +134,10 @@ const styles = StyleSheet.create({
   submit: {
     marginTop: Spacing.two,
   },
-  footer: {
-    textAlign: 'center',
+  hints: {
+    gap: Spacing.one,
   },
-  demoHint: {
+  hint: {
     textAlign: 'center',
   },
 });

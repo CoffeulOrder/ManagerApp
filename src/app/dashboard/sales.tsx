@@ -1,170 +1,92 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { PinModal } from '@/components/pin-modal';
+import { DailyView } from '@/components/sales/daily-view';
+import { MonthlyView } from '@/components/sales/monthly-view';
 import { ThemedText } from '@/components/themed-text';
 import { useApp } from '@/context/app-context';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import type { Order } from '@/types';
+import { startOfMonth, todayKey } from '@/lib/date';
+import { groupByDay } from '@/lib/sales';
 
-type Period = 'today' | 'week' | 'month';
+type Mode = 'daily' | 'monthly';
 
-const PERIODS: { key: Period; label: string }[] = [
-  { key: 'today', label: '오늘' },
-  { key: 'week', label: '이번 주' },
-  { key: 'month', label: '이번 달' },
+const MODES: { key: Mode; label: string }[] = [
+  { key: 'daily', label: '일별' },
+  { key: 'monthly', label: '월별' },
 ];
 
-function withinPeriod(ts: number, period: Period) {
-  const now = new Date();
-  const date = new Date(ts);
-  if (period === 'today') {
-    return date.toDateString() === now.toDateString();
-  }
-  const diffDays = (now.getTime() - ts) / (1000 * 60 * 60 * 24);
-  if (period === 'week') return diffDays <= 7;
-  return diffDays <= 31;
-}
-
-function formatDateTime(ts: number) {
-  const d = new Date(ts);
-  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
 export default function SalesScreen() {
+  const router = useRouter();
   const { orders, currentStore } = useApp();
-  const [period, setPeriod] = useState<Period>('today');
 
-  const completed = useMemo(
-    () =>
-      orders.filter(
-        (o) => o.storeId === currentStore?.id && o.status === 'COMPLETED' && withinPeriod(o.createdAt, period)
-      ),
-    [orders, currentStore, period]
+  const [unlocked, setUnlocked] = useState(false);
+  const [mode, setMode] = useState<Mode>('daily');
+  const [dateKey, setDateKey] = useState(todayKey);
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()));
+  const [calendarSelected, setCalendarSelected] = useState<string | null>(null);
+
+  const ordersByDay = useMemo(
+    () => groupByDay(orders.filter((order) => order.storeId === currentStore?.id)),
+    [orders, currentStore]
   );
 
-  const totalRevenue = completed.reduce((sum, o) => sum + o.totalPrice, 0);
-  const orderCount = completed.length;
-  const avgOrderValue = orderCount > 0 ? Math.round(totalRevenue / orderCount) : 0;
+  if (!unlocked) {
+    return (
+      <View style={styles.screen}>
+        <PinModal
+          visible
+          title="매출 조회"
+          onCancel={() => router.replace('/dashboard')}
+          onSuccess={() => setUnlocked(true)}
+        />
+      </View>
+    );
+  }
 
-  const bestSellers = useMemo(() => {
-    const map = new Map<string, { name: string; qty: number; amount: number }>();
-    for (const order of completed) {
-      for (const line of order.lines) {
-        const prev = map.get(line.name) ?? { name: line.name, qty: 0, amount: 0 };
-        prev.qty += line.qty;
-        prev.amount += line.qty * line.price;
-        map.set(line.name, prev);
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => b.qty - a.qty);
-  }, [completed]);
-
-  const sortedOrders = useMemo(() => [...completed].sort((a, b) => b.createdAt - a.createdAt), [completed]);
+  function openDay(key: string) {
+    setDateKey(key);
+    setCalendarSelected(null);
+    setMode('daily');
+  }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.periodRow}>
-        {PERIODS.map((p) => {
-          const active = p.key === period;
+      <View style={styles.modeRow}>
+        {MODES.map((item) => {
+          const active = item.key === mode;
           return (
             <Pressable
-              key={p.key}
-              style={[styles.periodPill, active && styles.periodPillActive]}
-              onPress={() => setPeriod(p.key)}>
+              key={item.key}
+              style={[styles.modePill, active && styles.modePillActive]}
+              onPress={() => setMode(item.key)}>
               <ThemedText type="smallBold" color={active ? 'accentText' : 'textSecondary'}>
-                {p.label}
+                {item.label}
               </ThemedText>
             </Pressable>
           );
         })}
       </View>
 
-      <View style={styles.statRow}>
-        <StatCard label="총 매출" value={`${totalRevenue.toLocaleString()}원`} />
-        <StatCard label="주문 건수" value={`${orderCount}건`} />
-        <StatCard label="평균 객단가" value={`${avgOrderValue.toLocaleString()}원`} />
-      </View>
-
-      <View style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          베스트 메뉴
-        </ThemedText>
-        {bestSellers.length === 0 ? (
-          <ThemedText type="small" color="textMuted">
-            해당 기간의 판매 데이터가 없습니다
-          </ThemedText>
-        ) : (
-          <View style={styles.tableCard}>
-            {bestSellers.map((item, index) => (
-              <View key={item.name} style={styles.tableRow}>
-                <ThemedText type="small" color="textSecondary" style={styles.rank}>
-                  {index + 1}
-                </ThemedText>
-                <ThemedText type="default" style={styles.tableCell}>
-                  {item.name}
-                </ThemedText>
-                <ThemedText type="small" color="textSecondary">
-                  {item.qty}개
-                </ThemedText>
-                <ThemedText type="smallBold" color="accent" style={styles.tableAmount}>
-                  {item.amount.toLocaleString()}원
-                </ThemedText>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          주문 내역
-        </ThemedText>
-        {sortedOrders.length === 0 ? (
-          <ThemedText type="small" color="textMuted">
-            완료된 주문이 없습니다
-          </ThemedText>
-        ) : (
-          <View style={styles.tableCard}>
-            {sortedOrders.map((order) => (
-              <OrderRow key={order.id} order={order} />
-            ))}
-          </View>
-        )}
-      </View>
+      {mode === 'daily' ? (
+        <DailyView ordersByDay={ordersByDay} dateKey={dateKey} onChangeDate={setDateKey} />
+      ) : (
+        <MonthlyView
+          ordersByDay={ordersByDay}
+          month={calendarMonth}
+          onMonthChange={(month) => {
+            setCalendarMonth(month);
+            setCalendarSelected(null);
+          }}
+          selected={calendarSelected}
+          onSelect={setCalendarSelected}
+          onOpenDay={openDay}
+          commissionRate={currentStore?.commissionRate ?? 0}
+        />
+      )}
     </ScrollView>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.statCard}>
-      <ThemedText type="small" color="textSecondary">
-        {label}
-      </ThemedText>
-      <ThemedText type="title" style={styles.statValue}>
-        {value}
-      </ThemedText>
-    </View>
-  );
-}
-
-function OrderRow({ order }: { order: Order }) {
-  const itemSummary = order.lines.map((l) => `${l.name} x${l.qty}`).join(', ');
-  return (
-    <View style={styles.tableRow}>
-      <ThemedText type="small" color="textSecondary" style={styles.orderNo}>
-        #{order.orderNo}
-      </ThemedText>
-      <ThemedText type="small" style={styles.tableCell} numberOfLines={1}>
-        {itemSummary}
-      </ThemedText>
-      <ThemedText type="small" color="textMuted">
-        {formatDateTime(order.createdAt)}
-      </ThemedText>
-      <ThemedText type="smallBold" color="accent" style={styles.tableAmount}>
-        {order.totalPrice.toLocaleString()}원
-      </ThemedText>
-    </View>
   );
 }
 
@@ -176,7 +98,7 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     gap: Spacing.four,
   },
-  periodRow: {
+  modeRow: {
     flexDirection: 'row',
     alignSelf: 'flex-start',
     backgroundColor: Colors.backgroundElement,
@@ -184,64 +106,12 @@ const styles = StyleSheet.create({
     padding: Spacing.half,
     gap: Spacing.half,
   },
-  periodPill: {
+  modePill: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.five,
     borderRadius: Radius.pill,
-    overflow: 'hidden',
   },
-  periodPillActive: {
+  modePillActive: {
     backgroundColor: Colors.accent,
-  },
-  statRow: {
-    flexDirection: 'row',
-    gap: Spacing.three,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.backgroundElement,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    padding: Spacing.four,
-    gap: Spacing.one,
-  },
-  statValue: {
-    marginTop: Spacing.one,
-  },
-  section: {
-    gap: Spacing.two,
-  },
-  sectionTitle: {
-    marginBottom: Spacing.one,
-  },
-  tableCard: {
-    backgroundColor: Colors.backgroundElement,
-    borderRadius: Radius.large,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.three,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  rank: {
-    width: 20,
-  },
-  tableCell: {
-    flex: 1,
-  },
-  tableAmount: {
-    minWidth: 80,
-    textAlign: 'right',
-  },
-  orderNo: {
-    width: 96,
   },
 });

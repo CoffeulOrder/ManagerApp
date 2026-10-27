@@ -3,11 +3,15 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView, type AndroidSymbol, type SFSymbol } from 'expo-symbols';
 
+import { ConnectionBanner, NewOrderBanner } from '@/components/banners';
+import { OrderTimeoutWatcher } from '@/components/order-timeout-watcher';
+import { StoreSchedule } from '@/components/store-schedule';
+import { StoreStatusControl } from '@/components/store-status-control';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useApp } from '@/context/app-context';
+import { useStayAwake } from '@/hooks/use-stay-awake';
 import { Colors, Radius, SidebarWidth, Spacing } from '@/constants/theme';
-import type { StoreStatus } from '@/types';
 
 const NAV_ITEMS: {
   href: '/dashboard' | '/dashboard/menu' | '/dashboard/sales';
@@ -20,19 +24,16 @@ const NAV_ITEMS: {
   { href: '/dashboard/sales', label: '매출 조회', ios: 'chart.bar.fill', android: 'bar_chart' },
 ];
 
-const STATUS_OPTIONS: { status: StoreStatus; label: string }[] = [
-  { status: 'OPEN', label: '영업중' },
-  { status: 'PAUSED', label: '일시정지' },
-  { status: 'CLOSED', label: '마감' },
-];
-
 export default function DashboardLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const { merchant, currentStore, logout, setStoreStatus } = useApp();
+  const { account, currentStore, logout } = useApp();
+  // The tablet must never sleep while orders can arrive.
+  useStayAwake();
 
-  if (!merchant) return <Redirect href="/login" />;
-  if (!currentStore) return <Redirect href="/store-select" />;
+  if (!account || !currentStore) return <Redirect href="/login" />;
+
+  const settingsActive = pathname === '/dashboard/settings';
 
   function handleLogout() {
     logout();
@@ -41,6 +42,7 @@ export default function DashboardLayout() {
 
   return (
     <ThemedView style={styles.screen}>
+      <OrderTimeoutWatcher />
       <View style={styles.sidebar}>
         <SafeAreaView edges={['left', 'top', 'bottom']} style={styles.sidebarInner}>
           <View style={styles.brandRow}>
@@ -52,7 +54,7 @@ export default function DashboardLayout() {
               />
             </View>
             <ThemedText type="subtitle" style={styles.brandText}>
-              Coffeul
+              ORMO
             </ThemedText>
           </View>
 
@@ -78,12 +80,19 @@ export default function DashboardLayout() {
           </View>
 
           <View style={styles.sidebarFooter}>
-            <Pressable style={styles.changeStoreButton} onPress={() => router.replace('/store-select')}>
-              <ThemedText type="small" color="textSecondary">
-                지점 변경
+            <Pressable
+              style={[styles.navItem, settingsActive && styles.navItemActive]}
+              onPress={() => router.replace('/dashboard/settings')}>
+              <SymbolView
+                name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
+                tintColor={settingsActive ? Colors.accentText : Colors.textSecondary}
+                size={18}
+              />
+              <ThemedText type="smallBold" color={settingsActive ? 'accentText' : 'textSecondary'}>
+                설정
               </ThemedText>
             </Pressable>
-            <Pressable style={styles.changeStoreButton} onPress={handleLogout}>
+            <Pressable style={styles.logoutButton} onPress={handleLogout}>
               <ThemedText type="small" color="danger">
                 로그아웃
               </ThemedText>
@@ -93,30 +102,20 @@ export default function DashboardLayout() {
       </View>
 
       <View style={styles.contentArea}>
+        <ConnectionBanner />
         <SafeAreaView edges={['top', 'right']} style={styles.topBar}>
           <View>
             <ThemedText type="subtitle">{currentStore.name}</ThemedText>
             <ThemedText type="small" color="textSecondary">
-              {currentStore.school}
+              {currentStore.school} · 영업시간 {currentStore.openTime} ~ {currentStore.closeTime}
             </ThemedText>
           </View>
 
-          <View style={styles.statusGroup}>
-            {STATUS_OPTIONS.map((opt) => {
-              const active = currentStore.status === opt.status;
-              return (
-                <Pressable
-                  key={opt.status}
-                  style={[styles.statusOption, active && styles.statusOptionActive]}
-                  onPress={() => setStoreStatus(currentStore.id, opt.status)}>
-                  <ThemedText type="smallBold" color={active ? 'accentText' : 'textSecondary'}>
-                    {opt.label}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
+          <StoreStatusControl />
         </SafeAreaView>
+
+        <NewOrderBanner />
+        <StoreSchedule />
 
         <View style={styles.body}>
           <Slot />
@@ -159,7 +158,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   brandText: {
-    fontFamily: 'ui-serif',
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   navList: {
     gap: Spacing.one,
@@ -178,9 +178,9 @@ const styles = StyleSheet.create({
   sidebarFooter: {
     gap: Spacing.one,
   },
-  changeStoreButton: {
+  logoutButton: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.two,
+    paddingHorizontal: Spacing.three,
   },
   contentArea: {
     flex: 1,
@@ -193,21 +193,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-  },
-  statusGroup: {
-    flexDirection: 'row',
-    backgroundColor: Colors.backgroundElement,
-    borderRadius: Radius.pill,
-    padding: Spacing.half,
-    gap: Spacing.half,
-  },
-  statusOption: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.pill,
-  },
-  statusOptionActive: {
-    backgroundColor: Colors.accent,
   },
   body: {
     flex: 1,

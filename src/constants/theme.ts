@@ -1,34 +1,33 @@
 /**
- * Coffeul brand palette. The manager app always renders in the same warm dark
- * theme as the customer app — there is no light mode.
+ * ORMO brand palette: blue #008AFF, navy #111827, gray #D9D9D9, ice #F3F6FF.
+ * The manager app has a single light theme (no dark mode).
  */
 
 import '@/global.css';
 
 export const Colors = {
-  background: '#1B120B',
-  backgroundElevated: '#241811',
-  backgroundElement: '#2A1D14',
-  backgroundSelected: '#3A2A1C',
-  border: '#3D2C1F',
+  background: '#F3F6FF',
+  backgroundElevated: '#E8EEFB',
+  backgroundElement: '#FFFFFF',
+  backgroundSelected: '#DCE5F7',
+  border: '#D9D9D9',
 
-  text: '#F5ECE1',
-  textSecondary: '#B9A691',
-  textMuted: '#8A7A6A',
+  text: '#111827',
+  textSecondary: '#4B5563',
+  textMuted: '#6B7280',
 
-  accent: '#E8A659',
-  accentStrong: '#D89142',
-  accentText: '#241206',
+  accent: '#008AFF',
+  accentStrong: '#0070D6',
+  accentText: '#FFFFFF',
+  white: '#FFFFFF',
 
-  danger: '#E1584A',
-  dangerBg: '#3A231F',
-  success: '#3CB878',
-  successBg: '#1E3327',
-  warning: '#E8C459',
+  danger: '#E5484D',
+  dangerBg: '#FDECEC',
+  success: '#15803D',
+  successBg: '#E3F6EA',
+  warning: '#B45309',
 
-  kakao: '#FFCD00',
-  naver: '#2ECC71',
-  overlay: 'rgba(10, 6, 3, 0.6)',
+  overlay: 'rgba(17, 24, 39, 0.5)',
 } as const;
 
 export type ThemeColor = keyof typeof Colors;
@@ -50,9 +49,9 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  small: 8,
-  medium: 12,
-  large: 16,
+  small: 10,
+  medium: 14,
+  large: 20,
   pill: 999,
 } as const;
 
