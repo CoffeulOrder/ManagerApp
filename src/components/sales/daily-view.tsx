@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { addDays, formatDateKey, formatTime, fromDateKey, startOfMonth, todayKey } from '@/lib/date';
 import { formatNumber, formatWon } from '@/lib/format';
-import { activeLines, hasPartialCancel, isCouponOrder, lineLabel, netTotal } from '@/lib/order';
+import { activeLines, hasPartialCancel, hasRefund, isCouponOrder, lineLabel, netTotal, refundedQtyOf } from '@/lib/order';
 import { isCancelled, menuSubtotals, revenueOrdersOf, summarize } from '@/lib/sales';
 import type { Order } from '@/types';
 
@@ -204,6 +204,8 @@ function OrderHistory({ orders }: { orders: Order[] }) {
       {orders.slice(0, visible).map((order) => {
         const cancelled = isCancelled(order);
         const partial = !cancelled && hasPartialCancel(order);
+        const refunded = !cancelled && hasRefund(order);
+        const fullyRefunded = refunded && netTotal(order) === 0;
         const shownLines = cancelled ? order.lines : activeLines(order);
         return (
           <View key={order.id} style={styles.tableRow}>
@@ -211,7 +213,12 @@ function OrderHistory({ orders }: { orders: Order[] }) {
               #{order.orderNo}
             </ThemedText>
             <ThemedText type="small" style={styles.flex} numberOfLines={1}>
-              {shownLines.map((line) => `${lineLabel(line)} x${line.qty}`).join(', ')}
+              {shownLines
+                .map((line) => {
+                  const back = refundedQtyOf(line);
+                  return `${lineLabel(line)} x${line.qty}${back > 0 ? ` (${back}개 환불)` : ''}`;
+                })
+                .join(', ')}
             </ThemedText>
             <ThemedText type="small" color="textMuted">
               {formatTime(order.createdAt)}
@@ -241,6 +248,13 @@ function OrderHistory({ orders }: { orders: Order[] }) {
                 <View style={styles.partialBadge}>
                   <ThemedText type="label" color="warning">
                     미수령 폐기
+                  </ThemedText>
+                </View>
+              )}
+              {refunded && (
+                <View style={styles.cancelBadge}>
+                  <ThemedText type="label" color="danger">
+                    {fullyRefunded ? '전액 환불' : '부분 환불'}
                   </ThemedText>
                 </View>
               )}

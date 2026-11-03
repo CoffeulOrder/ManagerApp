@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개발 가이드</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--text:#1b1f24;--muted:#5d6672;--border:#e3e6eb;--accent:#008aff;--accent-bg:#e6f3ff;--code-bg:#eef1f5;--pre-bg:#14181d;--pre-text:#e8ecf1}
+@media (prefers-color-scheme:dark){:root{--bg:#101317;--card:#181c22;--text:#e8ecf1;--muted:#98a2b0;--border:#2a303a;--accent:#4aa8ff;--accent-bg:#14273b;--code-bg:#232a33;--pre-bg:#0b0e11}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+a{color:var(--accent)}
+.topbar{position:sticky;top:0;z-index:5;display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+.topbar .brand{font-weight:800;margin-right:12px;color:var(--text);text-decoration:none}
+.topbar a.nav{padding:6px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:600}
+.topbar a.nav:hover{background:var(--accent-bg);color:var(--accent)}
+.topbar a.nav.active{background:var(--accent-bg);color:var(--accent)}
+.layout{display:flex;gap:32px;max-width:1200px;margin:0 auto;padding:24px 16px 80px}
+.toc{display:none;flex:0 0 240px;position:sticky;top:72px;align-self:flex-start;max-height:calc(100vh - 96px);overflow:auto;font-size:14px}
+.toc a{display:block;padding:3px 0;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--accent)}
+.toc a.l3{padding-left:14px;font-size:13px}
+.toc .label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em}
+@media (min-width:1000px){.toc{display:block}}
+main{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:8px 32px 32px}
+@media (max-width:600px){main{padding:4px 18px 24px;border-radius:10px}}
+h1{font-size:28px;line-height:1.3;margin:28px 0 12px}
+h2{font-size:22px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--border)}
+h1+h2,h1+p+h2{border-top:0}
+h3{font-size:18px;margin:28px 0 8px}
+h4{font-size:16px;margin:20px 0 6px}
+h2,h3,h4{scroll-margin-top:72px;line-height:1.4}
+p,li{overflow-wrap:anywhere}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+li>ul,li>ol{margin:4px 0}
+hr{border:0;border-top:1px solid var(--border);margin:32px 0}
+code{background:var(--code-bg);padding:1px 6px;border-radius:5px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--pre-bg);color:var(--pre-text);padding:14px 16px;border-radius:10px;overflow:auto}
+pre code{background:none;padding:0;color:inherit}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);white-space:nowrap}
+blockquote{margin:12px 0;padding:8px 16px;border-left:4px solid var(--accent);background:var(--accent-bg);border-radius:0 8px 8px 0}
+.badge{display:inline-block;padding:0 8px;border-radius:999px;font-size:12px;font-weight:700;line-height:20px;vertical-align:1px;border:1px solid transparent}
+.badge-todo{background:#fde8e8;color:#b42318}
+.badge-diff{background:#fff1d6;color:#9a5b00}
+.badge-talk{background:#e8eefc;color:#2848a8}
+.badge-be{background:#e6f6ee;color:#146c43}
+.badge-app{background:#e6f3ff;color:#0a5aa8}
+.badge-mock{background:#eee6fa;color:#5a34a0}
+.badge-assume{background:#fff1d6;color:#9a5b00}
+@media (prefers-color-scheme:dark){.badge-todo{background:#3a1717;color:#ff9b93}.badge-diff,.badge-assume{background:#3a2b10;color:#ffc766}.badge-talk{background:#18233f;color:#9db8ff}.badge-be{background:#12301f;color:#7fd8a6}.badge-app{background:#14273b;color:#7cc1ff}.badge-mock{background:#271b3d;color:#c4a6ff}}
+.home{max-width:960px;margin:0 auto;padding:48px 16px 80px}
+.home h1{margin-top:0}
+.home p.lead{color:var(--muted)}
+.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:28px}
+.card{display:block;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);text-decoration:none}
+.card:hover{border-color:var(--accent)}
+.card h2{font-size:18px;margin:0 0 6px;border:0;padding:0}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card .file{display:block;margin-top:12px;font-size:12px;color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html">ORMO 관리자 앱 문서</a><a class="nav" href="index.html">목차</a><a class="nav" href="ORMO_PLAN.html">ORMO_PLAN</a><a class="nav" href="FEATURE_SPEC.html">FEATURE_SPEC</a><a class="nav active" href="GUIDE.html">GUIDE</a></header>
+<div class="layout"><nav class="toc"><div class="label">목차</div><a class="l2" href="#1-시작하기">1. 시작하기</a><a class="l2" href="#2-폴더-구조-src">2. 폴더 구조 (src/)</a><a class="l2" href="#3-상태-구조">3. 상태 구조</a><a class="l2" href="#4-화면-규칙">4. 화면 규칙</a><a class="l2" href="#5-주문-동작-하나를-추가하는-순서">5. 주문 동작 하나를 추가하는 순서</a><a class="l2" href="#6-be-연동-가이드">6. BE 연동 가이드</a><a class="l2" href="#7-확인-방법과-한계">7. 확인 방법과 한계</a><a class="l2" href="#8-문서-다시-만들기">8. 문서 다시 만들기</a></nav><main><h1 id="ormo-관리자-앱-개발-가이드">ORMO 관리자 앱 개발 가이드</h1>
+<p>코드를 처음 여는 사람이 구조를 파악하고 BE 연동 때 어디를 고쳐야 하는지 알 수 있도록 정리했습니다.</p>
+<h2 id="1-시작하기">1. 시작하기</h2>
+<pre><code>npm install
+npm run web      # 브라우저로 확인 (expo start --web)
+npx expo start   # 태블릿 실기기, 시뮬레이터</code></pre>
+<ul><li>Expo SDK 57 / React Native 0.86 / expo-router. <strong>Expo가 이전 버전과 달라졌으므로</strong> 코드를 쓰기 전에 <a href="https://docs.expo.dev/versions/v57.0.0/" target="_blank" rel="noreferrer">Expo v57 문서</a>를 먼저 확인합니다(<code>AGENTS.md</code>).</li><li>가로 고정(<code>orientation: landscape</code>), iPad는 전체 화면 필수, 라이트 테마만 지원합니다. 태블릿 가로 화면을 기준으로 레이아웃을 잡습니다(브라우저 확인은 1194×834 정도).</li><li>개발용 로그인 계정(<code>src/data/mock.ts</code>): 아이디 <code>beomseok</code> / 비밀번호 <code>password</code> / 2차 비밀번호 <code>1234</code>, 아이디 <code>newmill</code> / 비밀번호 <code>password</code> / 2차 비밀번호 <code>5678</code>.</li><li>개발 빌드(<code>__DEV__</code>)에서는 주문 보드에 "테스트 주문 받기" 버튼이 나옵니다.</li><li>타입 검사: <code>npx tsc --noEmit</code>, 린트: <code>npm run lint</code>.</li></ul>
+<h2 id="2-폴더-구조-src">2. 폴더 구조 (<code>src/</code>)</h2>
+<div class="table-wrap"><table><thead><tr><th>폴더</th><th>내용</th></tr></thead><tbody><tr><td><code>app/</code></td><td>화면(expo-router). <code>login</code>, <code>dashboard/index</code>(주문), <code>menu</code>, <code>sales</code>, <code>settings</code></td></tr><tr><td><code>components/</code></td><td>모달, 배너, 상태 컨트롤 등 화면 조각. <code>sales/</code>는 일별·월별 매출 뷰</td></tr><tr><td><code>context/</code></td><td><code>app-context</code>(계정·매장·메뉴·주문 상태와 모든 액션), <code>device-settings</code>(기기별 설정), <code>toast</code></td></tr><tr><td><code>hooks/</code></td><td><code>use-pin-gate</code>(2차 비밀번호), <code>use-order-alert</code>(알림음 반복), <code>use-now</code>(타이머) 등</td></tr><tr><td><code>lib/</code></td><td>순수 함수. <code>order</code>(상태 전이, 금액, 환불), <code>sales</code>(매출 집계), <code>date</code>, <code>format</code>, <code>validation</code></td></tr><tr><td><code>constants/</code></td><td><code>order</code>(거절 사유, 취소 시간, 폐기 시간 범위), <code>theme</code>(색, 간격), <code>menu-category</code> 등</td></tr><tr><td><code>types/</code></td><td>도메인 타입(<code>Store</code>, <code>Order</code>, <code>OrderLine</code> …)</td></tr><tr><td><code>data/mock.ts</code></td><td>개발용 mock 데이터</td></tr></tbody></table></div>
+<p>경로 별칭 <code>@/</code>는 <code>src/</code>입니다.</p>
+<h2 id="3-상태-구조">3. 상태 구조</h2>
+<ul><li>루트 레이아웃(<code>app/_layout.tsx</code>)이 <code>DeviceSettingsProvider</code> → <code>AppProvider</code> → <code>ToastProvider</code> 순으로 감쌉니다.</li><li><code>AppProvider</code>는 reducer 하나로 계정, 매장, 메뉴, 주문을 관리합니다. 액션 함수(<code>acceptOrder</code>, <code>refundOrder</code> …)가 <strong>검증을 먼저 하고</strong> 통과하면 dispatch합니다. 실패는 <code>ActionResult</code>(<code>{ ok, message }</code>)로 돌려주고, 화면이 메시지를 보여줍니다.</li><li>주문 상태 전이 규칙은 <code>lib/order.ts</code>의 <code>ORDER_TRANSITIONS</code>(앞으로), <code>UNDO_TRANSITIONS</code>(실행 취소)에 있고, reducer도 허용되지 않은 전이를 무시합니다.</li><li>금액 계산은 항상 <code>lib/order.ts</code>의 함수를 씁니다. 주문 금액은 <code>netTotal</code>(최초 금액 − 수락 전 부분 취소 − 픽업 후 환불), 카드/쿠폰 분할은 <code>paymentSplit</code>, <code>refundSplit</code>입니다.</li><li>기기별 설정(알림음)은 AsyncStorage <code>ormo.device-settings.v1</code>에 저장하고, 매장·주문 데이터는 저장하지 않습니다(앱을 껐다 켜면 mock으로 초기화).</li></ul>
+<h2 id="4-화면-규칙">4. 화면 규칙</h2>
+<ul><li>색과 간격은 <code>constants/theme.ts</code>의 토큰만 씁니다. 텍스트는 <code>ThemedText</code>(<code>type</code>, <code>color</code> prop).</li><li>아이콘은 <code>SymbolView</code>에 <code>{ ios, android, web }</code> 이름을 모두 넘깁니다.</li><li><strong>모달 두 개를 이어서 띄울 때</strong>는 첫 모달을 닫고 <code>MODAL_SWAP_DELAY</code>(300ms, <code>hooks/use-pin-gate</code>) 뒤에 다음 모달을 엽니다. 곧바로 열면 첫 모달이 사라지는 중에 두 번째 모달이 뜨지 않을 수 있습니다(iOS).</li><li>2차 비밀번호가 필요한 동작은 <code>usePinGate().requirePin(run, title?, onCancel?)</code>로 감싸고 <code>pinModal</code>을 화면에 렌더링합니다. 어떤 동작에 PIN을 걸지는 기획 사항이므로 바꿀 때 <code>FEATURE_SPEC</code> 2장도 같이 고칩니다.</li><li>되돌릴 수 없는 동작(거절, 부분 취소, 자체 폐기, 환불)은 확인 단계를 거치고 "되돌릴 수 없습니다"를 명시합니다.</li></ul>
+<h2 id="5-주문-동작-하나를-추가하는-순서">5. 주문 동작 하나를 추가하는 순서</h2>
+<ol><li><code>types/index.ts</code>에 필요한 필드를 추가합니다.</li><li><code>lib/order.ts</code>에 판정 함수와 금액 계산을 추가합니다(화면과 context에서 같이 씀).</li><li><code>context/app-context.tsx</code>에 reducer 액션과 검증 함수를 추가하고 context 값, deps에 넣습니다.</li><li>화면 컴포넌트를 <code>components/</code>에 만들고 <code>app/dashboard/index.tsx</code>에서 연결합니다.</li><li>매출에 영향을 주면 <code>lib/sales.ts</code>(집계)와 <code>components/sales/*</code>(표시)를 같이 고칩니다.</li><li><code>FEATURE_SPEC</code>(docs/admin-app-feature-spec.md)을 갱신합니다.</li></ol>
+<h2 id="6-be-연동-가이드">6. BE 연동 가이드</h2>
+<p>mock으로 대신하고 있는 것을 걷어내고 API로 바꿉니다. 자세한 목록은 <code>FEATURE_SPEC</code> 9장과 <code>ORMO_PLAN</code>의 "남은 기능" C장에 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>대상</th><th>위치</th><th>할 일</th></tr></thead><tbody><tr><td>접수 10분 자동 거절</td><td><code>components/order-timeout-watcher.tsx</code></td><td>삭제하고 서버 상태를 받음</td></tr><tr><td>테스트 주문 받기</td><td><code>app-context.tsx</code> <code>simulateIncomingOrder</code></td><td>삭제, 실제 푸시/소켓으로 대체</td></tr><tr><td>자동 마감·자동 재개</td><td><code>components/store-schedule.tsx</code></td><td>서버 규칙으로 이전</td></tr><tr><td>로그인·PIN 검증</td><td><code>app-context.tsx</code> <code>login</code>, <code>verifySecondaryPassword</code> 등</td><td>서버 호출로 변경, 실패 횟수 제한</td></tr><tr><td>데이터</td><td><code>data/mock.ts</code></td><td>삭제, 초기 로딩을 API로</td></tr></tbody></table></div>
+<p>연동 순서 제안:</p>
+<ol><li>로그인·매장 정보 로딩 → 2. 주문 목록 조회와 실시간 수신 → 3. 주문 상태 변경 API → 4. 환불·부분 취소(결제 연동) → 5. 메뉴 → 6. 매출 조회.</li></ol>
+<p>액션 함수가 이미 <code>ActionResult</code>를 돌려주므로, 비동기로 바꿀 때 시그니처를 <code>Promise&lt;ActionResult&gt;</code>로 바꾸고 화면의 호출부에서 <code>await</code> 하면 됩니다. 실행 취소와 실패 처리는 서버 응답을 기준으로 다시 정리해야 합니다.</p>
+<h2 id="7-확인-방법과-한계">7. 확인 방법과 한계</h2>
+<ul><li>화면 확인은 <code>npm run web</code>으로 브라우저에서 하고, 타입은 <code>npx tsc --noEmit</code>으로 확인합니다.</li><li><strong>실기기에서 확인하지 못한 것</strong>: 알림음 재생(무음 모드 포함), 화면 꺼짐 방지, 가로 고정, iPad 전체 화면, 모달 전환 타이밍. 태블릿 실기기 테스트가 필요합니다.</li><li>자동화 테스트는 아직 없습니다. 금액·환불·매출 계산은 <code>lib/</code>의 순수 함수에 모여 있으므로 단위 테스트를 붙이기 좋습니다.</li></ul>
+<h2 id="8-문서-다시-만들기">8. 문서 다시 만들기</h2>
+<p><code>docs/*.md</code>가 원본이고 <code>docs/html/</code>은 이를 변환한 결과입니다.</p>
+<pre><code>node scripts/build-docs.mjs</code></pre></main></div>
+</body>
+</html>

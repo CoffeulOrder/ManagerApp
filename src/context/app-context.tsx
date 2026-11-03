@@ -9,7 +9,16 @@ import {
   type PauseReason,
   type RejectReason,
 } from '@/constants/order';
-import { activeLines, canTransition, discardAvailableAt, UNDO_TRANSITIONS } from '@/lib/order';
+import {
+  activeLines,
+  canRefund,
+  canTransition,
+  discardAvailableAt,
+  hasRefund,
+  refundableQty,
+  refundedQtyOf,
+  UNDO_TRANSITIONS,
+} from '@/lib/order';
 import { isValidPin } from '@/lib/validation';
 import type { Account, MenuItem, Order, OrderStatus, Store, StoreStatus } from '@/types';
 
@@ -48,7 +57,14 @@ type Action =
   | { type: 'SET_DISCARD_MINUTES'; storeId: string; minutes: number }
   | { type: 'UNDO_ORDER_STATUS'; id: string }
   | { type: 'CANCEL_ORDER_LINES'; id: string; lineIds: string[] }
+  | { type: 'REFUND_ORDER_LINES'; id: string; items: RefundItem[] }
   | { type: 'ADD_ORDER'; order: Order };
+
+// One line of a post-pickup refund: how many units of the line to refund.
+export interface RefundItem {
+  lineId: string;
+  qty: number;
+}
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -155,6 +171,23 @@ function reducer(state: AppState, action: Action): AppState {
             : o
         ),
       };
+    case 'REFUND_ORDER_LINES':
+      return {
+        ...state,
+        orders: state.orders.map((o) => {
+          if (o.id !== action.id || !canRefund(o)) return o;
+          return {
+            ...o,
+            lines: o.lines.map((l) => {
+              const item = action.items.find((i) => i.lineId === l.id);
+              if (!item) return l;
+              const qty = Math.min(item.qty, refundableQty(l));
+              return qty > 0 ? { ...l, refundedQty: refundedQtyOf(l) + qty } : l;
+            }),
+            refundedAt: Date.now(),
+          };
+        }),
+      };
     case 'ADD_ORDER':
       return { ...state, orders: [...state.orders, action.order] };
     default:
@@ -187,6 +220,8 @@ interface AppContextValue extends AppState {
   acceptOrder: (id: string) => void;
   rejectOrder: (id: string, reason?: RejectReason) => void;
   cancelOrderLines: (id: string, lineIds: string[]) => ActionResult;
+  // Refunds (part of) an order after pickup. Only COMPLETED orders qualify.
+  refundOrder: (id: string, items: RefundItem[]) => ActionResult;
   markReady: (id: string) => void;
   completeOrder: (id: string) => void;
   discardUnclaimedOrder: (id: string) => ActionResult;
@@ -327,6 +362,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     [state.orders]
   );
+  const refundOrder = useCallback<AppContextValue['refundOrder']>(
+    (id, items) => {
+      const order = state.orders.find((o) => o.id === id);
+      if (!order) return { ok: false, message: '주문을 찾을 수 없습니다.' };
+      if (order.status !== 'COMPLETED') return { ok: false, message: '픽업 완료된 주문만 환불할 수 있습니다.' };
+      if (!canRefund(order)) return { ok: false, message: '환불할 수 있는 메뉴가 남아 있지 않습니다.' };
+      const valid = items.filter((item) => {
+        const line = order.lines.find((l) => l.id === item.lineId);
+        return line && Number.isInteger(item.qty) && item.qty > 0 && item.qty <= refundableQty(line);
+      });
+      if (valid.length === 0 || valid.length !== items.length) {
+        return { ok: false, message: '환불할 메뉴와 수량을 다시 확인해 주세요.' };
+      }
+      dispatch({ type: 'REFUND_ORDER_LINES', id, items: valid });
+      return { ok: true };
+    },
+    [state.orders]
+  );
   const discardUnclaimedOrder = useCallback<AppContextValue['discardUnclaimedOrder']>(
     (id) => {
       const order = state.orders.find((o) => o.id === id);
@@ -344,7 +397,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const undoOrderStatus = useCallback<AppContextValue['undoOrderStatus']>(
     (id) => {
       const order = ordersRef.current.find((o) => o.id === id);
-      if (!order || !UNDO_TRANSITIONS[order.status]) {
+      if (!order || !UNDO_TRANSITIONS[order.status] || hasRefund(order)) {
         return { ok: false, message: '되돌릴 수 없는 상태입니다.' };
       }
       if (Date.now() - order.updatedAt > UNDO_WINDOW_MS) {
@@ -430,6 +483,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       acceptOrder,
       rejectOrder,
       cancelOrderLines,
+      refundOrder,
       markReady,
       completeOrder,
       discardUnclaimedOrder,
@@ -457,6 +511,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       acceptOrder,
       rejectOrder,
       cancelOrderLines,
+      refundOrder,
       markReady,
       completeOrder,
       discardUnclaimedOrder,

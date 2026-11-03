@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORMO Manager 기획서</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--text:#1b1f24;--muted:#5d6672;--border:#e3e6eb;--accent:#008aff;--accent-bg:#e6f3ff;--code-bg:#eef1f5;--pre-bg:#14181d;--pre-text:#e8ecf1}
+@media (prefers-color-scheme:dark){:root{--bg:#101317;--card:#181c22;--text:#e8ecf1;--muted:#98a2b0;--border:#2a303a;--accent:#4aa8ff;--accent-bg:#14273b;--code-bg:#232a33;--pre-bg:#0b0e11}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+a{color:var(--accent)}
+.topbar{position:sticky;top:0;z-index:5;display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+.topbar .brand{font-weight:800;margin-right:12px;color:var(--text);text-decoration:none}
+.topbar a.nav{padding:6px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:600}
+.topbar a.nav:hover{background:var(--accent-bg);color:var(--accent)}
+.topbar a.nav.active{background:var(--accent-bg);color:var(--accent)}
+.layout{display:flex;gap:32px;max-width:1200px;margin:0 auto;padding:24px 16px 80px}
+.toc{display:none;flex:0 0 240px;position:sticky;top:72px;align-self:flex-start;max-height:calc(100vh - 96px);overflow:auto;font-size:14px}
+.toc a{display:block;padding:3px 0;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--accent)}
+.toc a.l3{padding-left:14px;font-size:13px}
+.toc .label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em}
+@media (min-width:1000px){.toc{display:block}}
+main{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:8px 32px 32px}
+@media (max-width:600px){main{padding:4px 18px 24px;border-radius:10px}}
+h1{font-size:28px;line-height:1.3;margin:28px 0 12px}
+h2{font-size:22px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--border)}
+h1+h2,h1+p+h2{border-top:0}
+h3{font-size:18px;margin:28px 0 8px}
+h4{font-size:16px;margin:20px 0 6px}
+h2,h3,h4{scroll-margin-top:72px;line-height:1.4}
+p,li{overflow-wrap:anywhere}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+li>ul,li>ol{margin:4px 0}
+hr{border:0;border-top:1px solid var(--border);margin:32px 0}
+code{background:var(--code-bg);padding:1px 6px;border-radius:5px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--pre-bg);color:var(--pre-text);padding:14px 16px;border-radius:10px;overflow:auto}
+pre code{background:none;padding:0;color:inherit}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);white-space:nowrap}
+blockquote{margin:12px 0;padding:8px 16px;border-left:4px solid var(--accent);background:var(--accent-bg);border-radius:0 8px 8px 0}
+.badge{display:inline-block;padding:0 8px;border-radius:999px;font-size:12px;font-weight:700;line-height:20px;vertical-align:1px;border:1px solid transparent}
+.badge-todo{background:#fde8e8;color:#b42318}
+.badge-diff{background:#fff1d6;color:#9a5b00}
+.badge-talk{background:#e8eefc;color:#2848a8}
+.badge-be{background:#e6f6ee;color:#146c43}
+.badge-app{background:#e6f3ff;color:#0a5aa8}
+.badge-mock{background:#eee6fa;color:#5a34a0}
+.badge-assume{background:#fff1d6;color:#9a5b00}
+@media (prefers-color-scheme:dark){.badge-todo{background:#3a1717;color:#ff9b93}.badge-diff,.badge-assume{background:#3a2b10;color:#ffc766}.badge-talk{background:#18233f;color:#9db8ff}.badge-be{background:#12301f;color:#7fd8a6}.badge-app{background:#14273b;color:#7cc1ff}.badge-mock{background:#271b3d;color:#c4a6ff}}
+.home{max-width:960px;margin:0 auto;padding:48px 16px 80px}
+.home h1{margin-top:0}
+.home p.lead{color:var(--muted)}
+.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:28px}
+.card{display:block;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);text-decoration:none}
+.card:hover{border-color:var(--accent)}
+.card h2{font-size:18px;margin:0 0 6px;border:0;padding:0}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card .file{display:block;margin-top:12px;font-size:12px;color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html">ORMO 관리자 앱 문서</a><a class="nav" href="index.html">목차</a><a class="nav active" href="ORMO_PLAN.html">ORMO_PLAN</a><a class="nav" href="FEATURE_SPEC.html">FEATURE_SPEC</a><a class="nav" href="GUIDE.html">GUIDE</a></header>
+<div class="layout"><nav class="toc"><div class="label">목차</div><a class="l2" href="#ii-ormo-manager">II. ORMO Manager</a><a class="l3" href="#기본-워크플로우">기본 워크플로우</a><a class="l3" href="#1-로그인">1. 로그인</a><a class="l3" href="#2-매장-상태-변경">2. 매장 상태 변경</a><a class="l3" href="#3-주문-관리-탭">3. 주문 관리 탭</a><a class="l3" href="#4-메뉴-관리-탭">4. 메뉴 관리 탭</a><a class="l2" href="#초안에-없지만-앱에-구현된-기능">초안에 없지만 앱에 구현된 기능</a><a class="l2" href="#ormo-manager-남은-기능">ORMO Manager 남은 기능</a><a class="l3" href="#a-기획-초안과-현재-앱이-다른-곳-먼저-결정-필요">A. 기획 초안과 현재 앱이 다른 곳 (먼저 결정 필요)</a><a class="l3" href="#b-아직-없는-기능">B. 아직 없는 기능</a><a class="l3" href="#c-be-연동-시-앱에서-걷어낼-mock">C. BE 연동 시 앱에서 걷어낼 mock</a><a class="l3" href="#d-한-번-결정하면-되는-것-요약">D. 한 번 결정하면 되는 것 (요약)</a></nav><main><h1 id="ormo-manager-기획서">ORMO Manager 기획서</h1>
+<p>대상: 카페 운영자(사장님 또는 알바생). 아래는 기획 초안의 워크플로우를 그대로 따르고, 각 항목에 <strong>현재 앱의 구현 상태</strong>를 붙인 문서입니다.</p>
+<ul><li>✅ 구현됨 / ⚠️ 구현돼 있지만 초안과 다름 / ⬜ 미구현 / 💬 논의 필요 / 🔌 BE가 있어야 완성</li><li>이 표기가 붙은 항목의 상세는 마지막 장 "남은 기능"에 있습니다.</li></ul>
+<h2 id="ii-ormo-manager">II. ORMO Manager</h2>
+<h3 id="기본-워크플로우">기본 워크플로우</h3>
+<h3 id="1-로그인">1. 로그인</h3>
+<ul><li><strong>1-1.</strong> 매장 하나당 하나의 계정을 관리자 측에서 발급하여 지급한다. — ✅ 앱에는 회원가입이 없고 아이디/비밀번호 로그인만 있습니다. 발급은 관리자 측(BE) 몫입니다.</li><li><strong>1-2.</strong> 일반회원과 다르게, 2차 비밀번호도 존재한다. (매출 조회 등에서만 사용) — ⚠️ 매출 조회 외에 메뉴 추가·삭제·수정, 설정에도 걸려 있습니다.</li><li><strong>1-3.</strong> 동시 접속 절대 불가하다. — ⬜🔌 BE가 세션을 하나만 허용해야 하고, 앱에는 세션이 끊겼을 때의 처리가 없습니다.</li></ul>
+<h3 id="2-매장-상태-변경">2. 매장 상태 변경</h3>
+<ul><li><strong>2-1.</strong> <code>영업중</code>, <code>일시정지</code>, <code>마감</code> 3가지 단계가 있다. — ✅ 상단 컨트롤에서 변경합니다. 일시정지는 재개 시간(10/20/30/60분, 직접 해제)과 사유(주문 혼잡/재료 준비/휴식)를 고릅니다.</li><li><strong>2-2.</strong> 로그인 시, 로그아웃 시 <code>마감</code> 상태로 강제 변경된다. — ⬜ 로그인/로그아웃해도 매장 상태가 그대로입니다.</li><li><strong>2-3.</strong> <code>영업중</code> 상태에서만 신규 주문을 받을 수 있다. — 🔌 신규 주문은 BE가 걸러야 합니다. 앱은 상태를 저장하고 표시만 합니다.</li><li><strong>2-4.</strong> <code>일시정지</code> 상태에서는 기존 주문을 처리할 수는 있으나, 신규 주문은 들어오지 않는다. 사용자에게 매장 상태를 어떻게 보여줄지는 논의사항이다. — ✅ 기존 주문 처리는 가능합니다. 💬 고객 앱 표시 방식은 미정입니다.</li><li><strong>2-5.</strong> <code>마감</code> 상태로 전환하기 위해서는 모든 주문이 처리된 상태여야 한다. — ⚠️ 미처리 주문이 있어도 확인창을 거치면 마감됩니다.</li></ul>
+<h3 id="3-주문-관리-탭">3. 주문 관리 탭</h3>
+<ul><li><strong>3-1.</strong> <code>접수 대기</code>, <code>제조 중</code>, <code>픽업대기</code>로 나뉘어 있다. — ✅ 3열 보드입니다.</li><li><strong>3-2.</strong> 각 상태의 모든 카드에는 아래 정보를 제공한다.<ul><li><strong>3-2-1.</strong> 주문번호, N분 전, 주문자 닉네임, 메뉴 정보 및 옵션, 수량, 개별 금액 및 총 금액 — ✅ 닉네임 대신 <code>customerName</code>(이름)을 표시합니다. 💬 표시 이름 정책 확인 필요.</li></ul></li><li><strong>3-3.</strong> <code>접수 대기</code>는 사용자가 매장에 요청 후 처리되지 않은 주문이 있으며, FIFO 구조로 설계. — ✅ 접수 시각 오름차순.<ul><li><strong>3-3-1.</strong> 각 카드에 <code>자동 거절까지 MM:SS(10분 고정)</code>, <code>부분취소 허용 여부</code>를 추가로 표시 — ✅ 2분 이하이면 빨갛게 표시됩니다. 자동 거절은 앱이 임시로 처리하고 있어서 BE에서 처리해야 합니다(🔌).</li><li><strong>3-3-2.</strong> <code>거절</code>, <code>수락</code>이 있고, 부분취소 허용 주문건일 경우 <code>일부 메뉴만 취소</code> 후 수락 가능하다. — ✅ 메뉴 줄 단위로 취소합니다.</li><li><strong>3-3-2.</strong> <code>거절</code> 또는 <code>일부 메뉴만 취소</code> 시, 사유를 선택한다. (재료 소진, 주문 폭주, 가게 사정 中 1) — ⚠️ 거절은 사유를 고르지만(✅), 일부 메뉴만 취소는 사유 선택이 없습니다(⬜).</li></ul></li><li><strong>3-4.</strong> <code>제조 중</code>은 수락된 주문 건을 수락한 순서대로 표기한다. (FIFO) 조리 완료된 경우 <code>조리 완료</code> 버튼을 통해 완료 처리할 수 있다. — ⚠️ <code>조리 완료</code>는 ✅, 정렬은 수락 순서가 아니라 접수 시각 순입니다.</li><li><strong>3-5.</strong> <code>픽업대기</code>는 매장에서 지정한 시간에 따라 자체 폐기 시간 카운터를 가동한다. 지정한 시간은 하단에 다시 언급된다. — ✅ 조리 완료 후 경과 시간과 폐기 가능까지 남은 시간을 표시하고, 가능해지면 <code>자체 폐기</code>가 켜집니다. 시간은 설정에서 10~30분(기본 20분), 마감 상태에서만 수정합니다.</li><li><strong>3-6.</strong> 우측 상단에 <code>오늘 처리 내역</code>을 보여준다. — ✅ 각 건의 금액도 표시합니다.<ul><li><strong>3-6-1.</strong> 오늘 들어온 주문 중 처리된 건에 대하여 <code>주문번호</code> 또는 <code>이름</code>으로 검색할 수 있다. — ✅</li><li><strong>3-6-2.</strong> <code>전체</code>, <code>픽업 완료</code>, <code>거절 및 취소</code>, <code>미수령</code> 건을 필터링하여 볼 수 있다. — ✅ 건수도 함께 표시합니다.</li><li><strong>3-6-3.</strong> 이 중 <code>픽업 완료</code> 건에 대하여 환불을 진행할 수 있다. — ✅ 메뉴별 수량 단위 부분 환불, 2차 비밀번호 없음. 환불 사유와 이력은 ⬜.</li></ul></li></ul>
+<h3 id="4-메뉴-관리-탭">4. 메뉴 관리 탭</h3>
+<ul><li><strong>4-1.</strong> 가게 내 메뉴를 카테고리에 따라 분류하여 조회할 수 있다. — ✅ 에스프레소/논커피/티/디저트 탭.</li><li><strong>4-2.</strong> 특정 메뉴를 클릭하면 … — 초안이 여기서 끊겨 있습니다. 현재 앱은 메뉴 카드를 누르면 <code>수정</code>(2차 비밀번호) / <code>품절 처리</code>·<code>판매 재개</code>가 나옵니다.</li></ul>
+<hr>
+<h2 id="초안에-없지만-앱에-구현된-기능">초안에 없지만 앱에 구현된 기능</h2>
+<ul><li><strong>주문 처리 보조</strong>: 조리 완료/픽업 완료 15초 실행 취소, 거절 사유가 재료 소진일 때 해당 메뉴 함께 품절 처리, 쿠폰 주문 표시(카드/쿠폰 금액 분리).</li><li><strong>새 주문 알림</strong>: 알림음을 처리할 때까지 7초마다 반복, 상단 배너, 알림음 켜기/끄기.</li><li><strong>영업</strong>: 영업시간 도래 시 "영업을 시작할까요?" 안내, 영업시간 종료 시 자동 마감, 일시정지 자동 재개.</li><li><strong>메뉴</strong>: 카테고리를 넘나드는 일괄 품절/판매 재개, 메뉴 추가·삭제.</li><li><strong>매출 조회</strong>(2차 비밀번호): 일별/월별, 카드·쿠폰 구분, 월별 수수료와 예상 정산 금액, 메뉴별 소계.</li><li><strong>설정</strong>: 알림음, 비밀번호/2차 비밀번호 변경, 영업시간, 자체 폐기 시간.</li><li><strong>기기</strong>: 화면 꺼짐 방지, 인터넷 끊김 배너, 가로 고정.</li></ul>
+<p>상세 동작은 <code>FEATURE_SPEC</code>에 있습니다.</p>
+<hr>
+<h2 id="ormo-manager-남은-기능">ORMO Manager 남은 기능</h2>
+<p>기획 초안(<code>II. ORMO Manager</code>)과 현재 앱 코드를 대조해 <strong>아직 구현되지 않았거나 초안과 다르게 동작하는 것</strong>만 모았습니다. 앱은 전부 mock 상태이고 BE 연동 전입니다.</p>
+<ul><li>표기: <span class="badge badge-todo">미구현</span> 아직 없음 / <span class="badge badge-diff">불일치</span> 구현돼 있지만 초안과 다르게 동작 / <span class="badge badge-talk">논의</span> 정책이 정해지지 않음 / <span class="badge badge-be">BE</span> BE가 있어야 완성됨</li><li>번호는 기획 초안의 번호를 따릅니다. 초안에 없는 항목은 <code>+</code>로 붙였습니다.</li></ul>
+<hr>
+<h3 id="a-기획-초안과-현재-앱이-다른-곳-먼저-결정-필요">A. 기획 초안과 현재 앱이 다른 곳 (먼저 결정 필요)</h3>
+<h4 id="1-로그인-2">1. 로그인</h4>
+<ul><li>1-2. <span class="badge badge-diff">불일치</span> 초안은 2차 비밀번호를 "매출 조회 등"에만 쓴다고 되어 있습니다. 앱은 매출 조회 외에 <strong>메뉴 추가·삭제·수정, 설정(비밀번호 변경, 2차 비밀번호 변경, 영업시간, 자체 폐기 시간)</strong> 에도 겁니다. 이 범위를 초안대로 줄일지, 앱 범위를 기획서에 반영할지 정해야 합니다.</li><li>1-3. <strong>[미구현][BE]</strong> 동시 접속 불가. 앱에는 다른 기기에서 로그인되어 현재 세션이 끊겼을 때의 처리(강제 로그아웃 화면, 안내 문구)가 없습니다. BE가 세션을 하나만 허용하고, 앱이 끊김 신호를 받아야 합니다.</li></ul>
+<h4 id="2-매장-상태">2. 매장 상태</h4>
+<ul><li>2-2. <span class="badge badge-todo">미구현</span> 로그인·로그아웃 시 <code>마감</code>으로 강제 변경. 현재는 로그인/로그아웃해도 매장 상태가 그대로입니다(<code>LOGIN</code>/<code>LOGOUT</code> 액션이 계정만 바꿈). 로그아웃 시 미처리 주문이 있을 때 어떻게 할지(막을지, 경고만 할지)도 같이 정해야 합니다.</li><li>2-4. <span class="badge badge-talk">논의</span> 일시정지 중 고객 앱에 매장 상태를 어떻게 보여줄지. 앱은 사유(주문 혼잡/재료 준비/휴식)와 재개 시각을 이미 갖고 있으니, 고객에게 사유와 예상 재개 시각을 보여줄지만 정하면 됩니다. 값 전달은 BE 몫입니다.</li><li>2-5. <span class="badge badge-diff">불일치</span> <code>마감</code>은 모든 주문이 처리된 상태에서만 가능해야 합니다. 현재는 미처리 주문이 있어도 확인창("접수 대기 N건…")만 거치면 마감되고, 마감 후에도 기존 주문 처리는 계속됩니다. 초안대로면 확인창 대신 <strong>마감 차단</strong>(미처리 건수 안내 + 주문 처리 유도)으로 바뀌어야 합니다. 같이 정할 것:<ul><li>자동 마감(영업시간 종료)에 미처리 주문이 있으면? 지금은 그냥 마감됩니다.</li><li>픽업 대기(<code>READY</code>) 주문도 "미처리"로 보는지. 그렇다면 고객이 가져가지 않은 주문은 자체 폐기 가능 시간이 되기 전까지 마감이 막힙니다.</li></ul></li></ul>
+<h4 id="3-주문-관리">3. 주문 관리</h4>
+<ul><li>3-3-2. <span class="badge badge-todo">미구현</span> <code>일부 메뉴만 취소</code> 시 사유 선택. 거절은 사유(재료 소진/주문 폭주/매장 사정)를 고르지만, 부분 취소는 사유 없이 바로 취소됩니다. 주문 데이터에도 부분 취소 사유 필드가 없습니다(<code>Order.rejectReason</code>은 거절 전용).</li><li>3-4. <span class="badge badge-diff">불일치</span> <code>제조 중</code>은 <strong>수락한 순서</strong>(FIFO)로 보여야 합니다. 현재는 주문 접수 시각(<code>createdAt</code>) 순입니다. 수락 시각 필드(<code>acceptedAt</code>)가 없어서, 먼저 들어왔지만 나중에 수락한 주문이 위로 올라옵니다.</li><li>3-2-1. <span class="badge badge-talk">확인</span> 초안은 "주문자 닉네임"인데 앱은 <code>customerName</code>(이름)으로 표시하고, 오늘 처리 내역의 검색도 이름 기준입니다. 고객 앱이 닉네임을 쓰는지, 실명을 쓰는지 정해야 합니다(실명이면 마스킹 항목 참고).</li></ul>
+<h4 id="4-메뉴-관리">4. 메뉴 관리</h4>
+<ul><li>4-2. <span class="badge badge-talk">확인</span> 초안이 "특정 메뉴를 클릭하면"에서 끊겨 있습니다. 현재 앱은 메뉴 카드를 누르면 <code>수정</code>(PIN) / <code>품절 처리</code>·<code>판매 재개</code> 시트가 뜹니다. 이어질 내용을 알려주시면 대조하겠습니다.</li></ul>
+<hr>
+<h3 id="b-아직-없는-기능">B. 아직 없는 기능</h3>
+<h4 id="영업">영업</h4>
+<ul><li>+1. <span class="badge badge-todo">미구현</span> 요일별 영업시간·정기 휴무일. 지금은 하루 한 구간(<code>openTime</code>~<code>closeTime</code>)만 있고 자정을 넘기는 시간은 지원하지 않습니다.</li><li>+2. <span class="badge badge-todo">미구현</span> 마감 후 정리 절차. 마감 시 남은 미수령 주문을 한 번에 폐기·정리하는 흐름이 없습니다(2-5 결정과 연결됨).</li><li>+3. <strong>[미구현][BE]</strong> BE 연결 상태 표시. 지금의 "연결 끊김" 배너는 기기의 인터넷 상태만 봅니다. 서버와 실제로 통신 중인지(heartbeat)는 모릅니다. 주문이 안 들어오는 상황을 매장에서 알아챌 수 있게 하려면 필요합니다.</li></ul>
+<h4 id="주문-환불">주문·환불</h4>
+<ul><li>+4. <span class="badge badge-todo">미구현</span> 환불 사유 입력과 환불 이력 목록. 지금은 사유 없이 환불되고, 환불은 주문 단위 합계만 남습니다(언제, 누가, 몇 개를 환불했는지 기록 없음).</li><li>+5. <span class="badge badge-todo">미구현</span> 어제 이전 주문의 환불. 오늘 처리 내역에 보이는 당일 주문만 환불할 수 있습니다. 허용 기간(예: 7일)을 정하면 매출 날짜 기준 문제도 같이 정해야 합니다(+15).</li><li>+6. <span class="badge badge-todo">미구현</span> 부분 취소를 수량 단위로. 지금은 메뉴 줄 단위로만 취소합니다(2잔 중 1잔만 취소 불가). 환불은 수량 단위입니다.</li><li>+7. <span class="badge badge-todo">미구현</span> 짧은 픽업번호. 주문번호가 <code>BW-114068</code>처럼 길어서 고객이 말로 전하기 어렵습니다.</li></ul>
+<h4 id="보안">보안</h4>
+<ul><li>+8. <strong>[미구현][BE]</strong> 2차 비밀번호 무조작 자동 재잠금. 현재 설정 화면은 한 번 풀면 화면에 머무는 동안 계속 열려 있고, 매출 조회는 화면을 벗어나야 다시 잠깁니다. 일정 시간 무조작이면 다시 잠그는 동작이 없습니다.</li><li>+9. <strong>[미구현][BE]</strong> 2차 비밀번호 시도 횟수 제한. 지금은 앱에서 비교하고 횟수 제한이 없습니다. 서버 검증으로 옮길 때 같이 필요합니다.</li><li>+10. <span class="badge badge-todo">미구현</span> 고객 이름 마스킹. 주문 카드와 처리 내역에 이름이 그대로 보입니다(3-2-1 결정과 연결됨).</li><li>+11. <span class="badge badge-todo">미구현</span> 권한 구분. 계정당 2차 비밀번호가 하나이고 점주/직원 구분이 없습니다. 환불에 PIN을 걸지 않기로 했으므로, 직원이 환불할 수 있는 상태입니다.</li></ul>
+<h4 id="메뉴">메뉴</h4>
+<ul><li>+12. <span class="badge badge-todo">미구현</span> 메뉴 숨김 vs 삭제. 지금 삭제는 확인창 없이 즉시 지워지고 되돌릴 수 없습니다.</li><li>+13. <span class="badge badge-todo">미구현</span> "오늘만 품절"과 "판매 중단"의 구분. 품절은 직접 풀 때까지 유지됩니다.</li><li>+14. <span class="badge badge-todo">미구현</span> 메뉴 이미지, 옵션(온도·사이즈) 관리, 카테고리 이동, <code>isHot</code> 수정. 지금은 이름·설명·가격만 수정됩니다.</li></ul>
+<h4 id="매출">매출</h4>
+<ul><li>+15. <span class="badge badge-talk">논의</span> 매출 날짜 기준. 날짜 기준이 주문 시각(<code>createdAt</code>)이라서 환불은 환불한 날이 아니라 원래 주문 날짜 매출에서 빠집니다. 정산 기준과 맞는지 BE와 확인해야 합니다. 미수령 폐기 주문을 매출에 포함하는 규칙도 같이 확인합니다.</li></ul>
+<hr>
+<h3 id="c-be-연동-시-앱에서-걷어낼-mock">C. BE 연동 시 앱에서 걷어낼 mock</h3>
+<div class="table-wrap"><table><thead><tr><th>대상</th><th>위치</th><th>BE가 하면</th></tr></thead><tbody><tr><td>접수 10분 자동 거절</td><td><code>components/order-timeout-watcher.tsx</code></td><td>서버가 <code>REJECTED(TIMEOUT)</code> 처리, 앱은 상태만 받음</td></tr><tr><td>테스트 주문 받기 버튼</td><td><code>context/app-context.tsx</code> <code>simulateIncomingOrder</code></td><td>삭제(실제 푸시 수신으로 대체)</td></tr><tr><td>자동 마감, 일시정지 자동 재개</td><td><code>components/store-schedule.tsx</code> 등</td><td>서버 규칙으로 이전, 앱은 보조</td></tr><tr><td>로그인, 비밀번호, 2차 비밀번호 검증</td><td><code>context/app-context.tsx</code></td><td>서버 검증, 토큰 저장</td></tr><tr><td>로컬 mock 데이터</td><td><code>data/mock.ts</code></td><td>삭제</td></tr></tbody></table></div>
+<h3 id="d-한-번-결정하면-되는-것-요약">D. 한 번 결정하면 되는 것 (요약)</h3>
+<ol><li>2차 비밀번호를 거는 범위 (1-2)</li><li>마감 시 미처리 주문 처리 방식 (2-5): 차단 / 경고 후 허용</li><li>부분 취소 사유 선택지 (3-3-2): 거절과 같은 3개를 쓸지</li><li>제조 중 정렬 기준 (3-4): 수락 순서로 확정하고 <code>acceptedAt</code>을 BE 필드로 요청할지</li><li>환불 가능 기간과 사유·이력 기록 (+4, +5)</li><li>고객 표시 이름: 닉네임 / 마스킹된 실명 (3-2-1, +10)</li></ol></main></div>
+</body>
+</html>

@@ -3,8 +3,8 @@ export const ORDER_ACCEPT_TIMEOUT_MINUTES = 10;
 
 // "자체 폐기": minutes after 조리 완료 before the store may discard an unclaimed order.
 export const DISCARD_MINUTES_MIN = 10;
-export const DISCARD_MINUTES_MAX = 180;
-export const DISCARD_MINUTES_DEFAULT = 30;
+export const DISCARD_MINUTES_MAX = 30;
+export const DISCARD_MINUTES_DEFAULT = 20;
 
 export const REJECT_REASONS = ['OUT_OF_STOCK', 'BUSY', 'STORE_CIRCUMSTANCES', 'TIMEOUT'] as const;
 export type RejectReason = (typeof REJECT_REASONS)[number];

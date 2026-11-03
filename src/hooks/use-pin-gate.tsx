@@ -6,15 +6,23 @@ import { PinModal } from '@/components/pin-modal';
 export const MODAL_SWAP_DELAY = 300;
 
 export function usePinGate() {
-  const [pending, setPending] = useState<{ run: () => void; title?: string } | null>(null);
+  const [pending, setPending] = useState<{ run: () => void; title?: string; onCancel?: () => void } | null>(null);
 
-  const requirePin = useCallback((run: () => void, title?: string) => setPending({ run, title }), []);
+  // onCancel runs when the PIN prompt is dismissed (e.g. to bring back the screen the prompt interrupted).
+  const requirePin = useCallback(
+    (run: () => void, title?: string, onCancel?: () => void) => setPending({ run, title, onCancel }),
+    []
+  );
 
   const pinModal = (
     <PinModal
       visible={pending !== null}
       title={pending?.title}
-      onCancel={() => setPending(null)}
+      onCancel={() => {
+        const cancel = pending?.onCancel;
+        setPending(null);
+        if (cancel) setTimeout(cancel, MODAL_SWAP_DELAY);
+      }}
       onSuccess={() => {
         const run = pending?.run;
         setPending(null);

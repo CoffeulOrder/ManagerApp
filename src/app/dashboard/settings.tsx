@@ -287,7 +287,7 @@ function DiscardForm() {
       <TextField
         label="조리 완료 후 (분)"
         keyboardType="number-pad"
-        maxLength={3}
+        maxLength={2}
         editable={closed}
         value={minutes}
         onChangeText={(value) => setMinutes(value.replace(/\D/g, ''))}

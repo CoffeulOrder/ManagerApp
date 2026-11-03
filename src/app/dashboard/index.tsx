@@ -6,6 +6,7 @@ import { ConfirmModal } from '@/components/confirm-modal';
 import { OptionChips } from '@/components/option-chips';
 import { PartialCancelModal } from '@/components/partial-cancel-modal';
 import { RecentOrdersModal } from '@/components/recent-orders-modal';
+import { RefundModal } from '@/components/refund-modal';
 import { RejectModal } from '@/components/reject-modal';
 import { ThemedText } from '@/components/themed-text';
 import { COUPON_TYPE_LABEL, REJECT_REASON_LABEL } from '@/constants/order';
@@ -14,6 +15,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useApp } from '@/context/app-context';
 import { useToast } from '@/context/toast';
 import { useNow } from '@/hooks/use-now';
+import { MODAL_SWAP_DELAY } from '@/hooks/use-pin-gate';
 import { toDateKey, todayKey } from '@/lib/date';
 import { formatCountdown, formatWon } from '@/lib/format';
 import {
@@ -53,6 +55,7 @@ export default function OrdersScreen() {
     acceptOrder,
     rejectOrder,
     cancelOrderLines,
+    refundOrder,
     markReady,
     completeOrder,
     discardUnclaimedOrder,
@@ -65,6 +68,7 @@ export default function OrdersScreen() {
   const [discardTarget, setDiscardTarget] = useState<Order | null>(null);
   const [partialTargetId, setPartialTargetId] = useState<string | null>(null);
   const [recentOpen, setRecentOpen] = useState(false);
+  const [refundTargetId, setRefundTargetId] = useState<string | null>(null);
 
   const storeOrders = useMemo(
     () => orders.filter((o) => o.storeId === currentStore?.id),
@@ -72,6 +76,7 @@ export default function OrdersScreen() {
   );
 
   const partialTarget = storeOrders.find((o) => o.id === partialTargetId) ?? null;
+  const refundTarget = storeOrders.find((o) => o.id === refundTargetId) ?? null;
   const finishedToday = useMemo(
     () =>
       storeOrders
@@ -89,6 +94,17 @@ export default function OrdersScreen() {
     showToast(result.ok ? doneMessage : (result.message ?? '되돌리지 못했습니다'));
   }
   const discardAfterMinutes = currentStore?.discardAfterMinutes ?? 0;
+
+  // The history list steps aside while the refund modal is up (native can't stack two modals).
+  function startRefund(order: Order) {
+    setRecentOpen(false);
+    setTimeout(() => setRefundTargetId(order.id), MODAL_SWAP_DELAY);
+  }
+
+  function closeRefund() {
+    setRefundTargetId(null);
+    setTimeout(() => setRecentOpen(true), MODAL_SWAP_DELAY);
+  }
 
   return (
     <View style={styles.screen}>
@@ -173,7 +189,26 @@ export default function OrdersScreen() {
         }}
       />
 
-      <RecentOrdersModal visible={recentOpen} orders={finishedToday} onClose={() => setRecentOpen(false)} />
+      <RecentOrdersModal
+        visible={recentOpen}
+        orders={finishedToday}
+        onRefund={startRefund}
+        onClose={() => setRecentOpen(false)}
+      />
+
+      <RefundModal
+        order={refundTarget}
+        onCancel={closeRefund}
+        onConfirm={(items) => {
+          const result = refundOrder(refundTarget?.id ?? '', items);
+          if (result.ok) {
+            showToast(`#${refundTarget?.orderNo} 환불 처리했습니다`);
+            closeRefund();
+          }
+          return result;
+        }}
+      />
+
 
       <ConfirmModal
         visible={discardTarget !== null}

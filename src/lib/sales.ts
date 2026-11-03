@@ -1,5 +1,5 @@
 import { toDateKey } from '@/lib/date';
-import { activeLines, lineAmount, paymentSplit } from '@/lib/order';
+import { activeLines, netTotal, paymentSplit, refundedQtyOf } from '@/lib/order';
 import type { Order } from '@/types';
 
 export function isCancelled(order: Order) {
@@ -7,8 +7,11 @@ export function isCancelled(order: Order) {
 }
 
 // Orders that earned money: picked up, or paid but never collected (the store discarded the drink).
+// An order refunded in full earned nothing, so it no longer counts.
 export function revenueOrdersOf(orders: Order[]) {
-  return orders.filter((order) => order.status === 'COMPLETED' || order.status === 'UNCLAIMED');
+  return orders.filter(
+    (order) => (order.status === 'COMPLETED' || order.status === 'UNCLAIMED') && netTotal(order) > 0
+  );
 }
 
 export function summarize(revenueOrders: Order[]) {
@@ -39,9 +42,11 @@ export function menuSubtotals(revenueOrders: Order[]) {
   const map = new Map<string, { name: string; qty: number; amount: number }>();
   for (const order of revenueOrders) {
     for (const line of activeLines(order)) {
+      const qty = line.qty - refundedQtyOf(line);
+      if (qty <= 0) continue;
       const entry = map.get(line.name) ?? { name: line.name, qty: 0, amount: 0 };
-      entry.qty += line.qty;
-      entry.amount += lineAmount(line);
+      entry.qty += qty;
+      entry.amount += line.price * qty;
       map.set(line.name, entry);
     }
   }

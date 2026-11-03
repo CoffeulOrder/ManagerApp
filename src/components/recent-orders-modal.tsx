@@ -7,7 +7,8 @@ import { ThemedText } from '@/components/themed-text';
 import { REJECT_REASON_LABEL } from '@/constants/order';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { formatTime } from '@/lib/date';
-import { activeLines, lineLabel } from '@/lib/order';
+import { formatWon } from '@/lib/format';
+import { activeLines, canRefund, hasRefund, lineLabel, netTotal, refundedAfterPickup, refundedQtyOf } from '@/lib/order';
 import { isCancelled } from '@/lib/sales';
 import type { Order } from '@/types';
 
@@ -39,22 +40,32 @@ function statusLabel(order: Order) {
 
 interface RecentOrdersModalProps {
   visible: boolean;
-  // Today's finished orders, newest first. Amounts are deliberately not shown here (no PIN needed).
+  // Today's finished orders, newest first.
   orders: Order[];
+  // Starts a refund for a picked-up order (the caller asks for the 2차 비밀번호 first).
+  onRefund: (order: Order) => void;
   onClose: () => void;
 }
 
-export function RecentOrdersModal({ visible, orders, onClose }: RecentOrdersModalProps) {
+export function RecentOrdersModal({ visible, orders, onRefund, onClose }: RecentOrdersModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <RecentOrdersCard orders={orders} onClose={onClose} />
+        <RecentOrdersCard orders={orders} onRefund={onRefund} onClose={onClose} />
       </View>
     </Modal>
   );
 }
 
-function RecentOrdersCard({ orders, onClose }: { orders: Order[]; onClose: () => void }) {
+function RecentOrdersCard({
+  orders,
+  onRefund,
+  onClose,
+}: {
+  orders: Order[];
+  onRefund: (order: Order) => void;
+  onClose: () => void;
+}) {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [query, setQuery] = useState('');
 
@@ -70,7 +81,7 @@ function RecentOrdersCard({ orders, onClose }: { orders: Order[]; onClose: () =>
     <View style={styles.card}>
       <ThemedText type="subtitle">오늘 처리 내역</ThemedText>
       <ThemedText type="small" color="textSecondary">
-        학생이 "음료가 안 왔어요" 하고 찾아올 때 확인하세요. 금액은 표시되지 않습니다.
+        학생이 "음료가 안 왔어요" 하고 찾아올 때 확인하세요. 픽업 완료한 주문은 환불할 수 있습니다.
       </ThemedText>
 
       <TextInput
@@ -100,16 +111,36 @@ function RecentOrdersCard({ orders, onClose }: { orders: Order[]; onClose: () =>
           </ThemedText>
         )}
         {shown.map((order) => {
-          const lines = isCancelled(order) ? order.lines : activeLines(order);
+          const cancelled = isCancelled(order);
+          const lines = cancelled ? order.lines : activeLines(order);
+          const refunded = hasRefund(order);
           return (
             <View key={order.id} style={styles.row}>
               <View style={styles.rowMain}>
                 <ThemedText type="smallBold">
                   #{order.orderNo} · {order.customerName}
                 </ThemedText>
-                <ThemedText type="small" color="textSecondary" numberOfLines={1}>
-                  {lines.map((line) => `${lineLabel(line)} x${line.qty}`).join(', ')}
+                <ThemedText type="small" color="textSecondary" numberOfLines={2}>
+                  {lines
+                    .map((line) => {
+                      const back = refundedQtyOf(line);
+                      return `${lineLabel(line)} x${line.qty}${back > 0 ? ` (${back}개 환불)` : ''}`;
+                    })
+                    .join(', ')}
                 </ThemedText>
+              </View>
+              <View style={styles.amountSide}>
+                <ThemedText
+                  type="smallBold"
+                  color={cancelled ? 'textMuted' : 'text'}
+                  style={cancelled && styles.strike}>
+                  {formatWon(cancelled ? order.totalPrice : netTotal(order))}
+                </ThemedText>
+                {refunded && (
+                  <ThemedText type="label" color="danger">
+                    환불 -{formatWon(refundedAfterPickup(order))}
+                  </ThemedText>
+                )}
               </View>
               <View style={styles.rowSide}>
                 <ThemedText type="label" color={isCancelled(order) || order.status === 'UNCLAIMED' ? 'danger' : 'success'}>
@@ -118,6 +149,11 @@ function RecentOrdersCard({ orders, onClose }: { orders: Order[]; onClose: () =>
                 <ThemedText type="small" color="textMuted">
                   {formatTime(order.updatedAt)}
                 </ThemedText>
+              </View>
+              <View style={styles.refundSlot}>
+                {canRefund(order) && (
+                  <Button label="환불" variant="danger" size="small" style={styles.refundButton} onPress={() => onRefund(order)} />
+                )}
               </View>
             </View>
           );
@@ -137,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    width: 560,
+    width: 680,
     maxHeight: '88%',
     backgroundColor: Colors.backgroundElement,
     borderRadius: Radius.large,
@@ -181,8 +217,24 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
   },
+  amountSide: {
+    alignItems: 'flex-end',
+    gap: Spacing.half,
+    minWidth: 76,
+  },
   rowSide: {
     alignItems: 'flex-end',
     gap: Spacing.half,
+    minWidth: 76,
+  },
+  refundSlot: {
+    width: 76,
+    alignItems: 'flex-end',
+  },
+  refundButton: {
+    width: '100%',
+  },
+  strike: {
+    textDecorationLine: 'line-through',
   },
 });

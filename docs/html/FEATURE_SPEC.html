@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>기능 명세 (BE 대조용)</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--text:#1b1f24;--muted:#5d6672;--border:#e3e6eb;--accent:#008aff;--accent-bg:#e6f3ff;--code-bg:#eef1f5;--pre-bg:#14181d;--pre-text:#e8ecf1}
+@media (prefers-color-scheme:dark){:root{--bg:#101317;--card:#181c22;--text:#e8ecf1;--muted:#98a2b0;--border:#2a303a;--accent:#4aa8ff;--accent-bg:#14273b;--code-bg:#232a33;--pre-bg:#0b0e11}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+a{color:var(--accent)}
+.topbar{position:sticky;top:0;z-index:5;display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+.topbar .brand{font-weight:800;margin-right:12px;color:var(--text);text-decoration:none}
+.topbar a.nav{padding:6px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:14px;font-weight:600}
+.topbar a.nav:hover{background:var(--accent-bg);color:var(--accent)}
+.topbar a.nav.active{background:var(--accent-bg);color:var(--accent)}
+.layout{display:flex;gap:32px;max-width:1200px;margin:0 auto;padding:24px 16px 80px}
+.toc{display:none;flex:0 0 240px;position:sticky;top:72px;align-self:flex-start;max-height:calc(100vh - 96px);overflow:auto;font-size:14px}
+.toc a{display:block;padding:3px 0;color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--accent)}
+.toc a.l3{padding-left:14px;font-size:13px}
+.toc .label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.04em}
+@media (min-width:1000px){.toc{display:block}}
+main{flex:1;min-width:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:8px 32px 32px}
+@media (max-width:600px){main{padding:4px 18px 24px;border-radius:10px}}
+h1{font-size:28px;line-height:1.3;margin:28px 0 12px}
+h2{font-size:22px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--border)}
+h1+h2,h1+p+h2{border-top:0}
+h3{font-size:18px;margin:28px 0 8px}
+h4{font-size:16px;margin:20px 0 6px}
+h2,h3,h4{scroll-margin-top:72px;line-height:1.4}
+p,li{overflow-wrap:anywhere}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+li>ul,li>ol{margin:4px 0}
+hr{border:0;border-top:1px solid var(--border);margin:32px 0}
+code{background:var(--code-bg);padding:1px 6px;border-radius:5px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--pre-bg);color:var(--pre-text);padding:14px 16px;border-radius:10px;overflow:auto}
+pre code{background:none;padding:0;color:inherit}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--code-bg);white-space:nowrap}
+blockquote{margin:12px 0;padding:8px 16px;border-left:4px solid var(--accent);background:var(--accent-bg);border-radius:0 8px 8px 0}
+.badge{display:inline-block;padding:0 8px;border-radius:999px;font-size:12px;font-weight:700;line-height:20px;vertical-align:1px;border:1px solid transparent}
+.badge-todo{background:#fde8e8;color:#b42318}
+.badge-diff{background:#fff1d6;color:#9a5b00}
+.badge-talk{background:#e8eefc;color:#2848a8}
+.badge-be{background:#e6f6ee;color:#146c43}
+.badge-app{background:#e6f3ff;color:#0a5aa8}
+.badge-mock{background:#eee6fa;color:#5a34a0}
+.badge-assume{background:#fff1d6;color:#9a5b00}
+@media (prefers-color-scheme:dark){.badge-todo{background:#3a1717;color:#ff9b93}.badge-diff,.badge-assume{background:#3a2b10;color:#ffc766}.badge-talk{background:#18233f;color:#9db8ff}.badge-be{background:#12301f;color:#7fd8a6}.badge-app{background:#14273b;color:#7cc1ff}.badge-mock{background:#271b3d;color:#c4a6ff}}
+.home{max-width:960px;margin:0 auto;padding:48px 16px 80px}
+.home h1{margin-top:0}
+.home p.lead{color:var(--muted)}
+.cards{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:28px}
+.card{display:block;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);text-decoration:none}
+.card:hover{border-color:var(--accent)}
+.card h2{font-size:18px;margin:0 0 6px;border:0;padding:0}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card .file{display:block;margin-top:12px;font-size:12px;color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html">ORMO 관리자 앱 문서</a><a class="nav" href="index.html">목차</a><a class="nav" href="ORMO_PLAN.html">ORMO_PLAN</a><a class="nav active" href="FEATURE_SPEC.html">FEATURE_SPEC</a><a class="nav" href="GUIDE.html">GUIDE</a></header>
+<div class="layout"><nav class="toc"><div class="label">목차</div><a class="l2" href="#1-도메인-모델">1. 도메인 모델</a><a class="l3" href="#store-types-index-ts">Store (types/index.ts)</a><a class="l3" href="#account">Account</a><a class="l3" href="#menuitem">MenuItem</a><a class="l3" href="#order">Order</a><a class="l3" href="#orderline">OrderLine</a><a class="l2" href="#2-인증-2차-비밀번호">2. 인증 · 2차 비밀번호</a><a class="l2" href="#3-주문-관리-app-dashboard-index-tsx">3. 주문 관리 (app/dashboard/index.tsx)</a><a class="l3" href="#3-1-상태-전이-lib-order-ts">3.1 상태 전이 (lib/order.ts)</a><a class="l3" href="#3-2-주문-카드">3.2 주문 카드</a><a class="l3" href="#3-3-동작">3.3 동작</a><a class="l3" href="#3-4-오늘-처리-내역-components-recent-orders-modal-tsx">3.4 오늘 처리 내역 (components/recent-orders-modal.tsx)</a><a class="l3" href="#3-5-픽업-후-환불-components-refund-modal-tsx">3.5 픽업 후 환불 (components/refund-modal.tsx)</a><a class="l2" href="#4-영업-상태-영업시간-components-store-status-control-tsx-store-schedule-tsx">4. 영업 상태 · 영업시간 (components/store-status-control.tsx, store-schedule.tsx)</a><a class="l2" href="#5-메뉴-관리-app-dashboard-menu-tsx">5. 메뉴 관리 (app/dashboard/menu.tsx)</a><a class="l2" href="#6-매출-조회-app-dashboard-sales-tsx-components-sales-lib-sales-ts-pin-필요">6. 매출 조회 (app/dashboard/sales.tsx, components/sales/, lib/sales.ts) — PIN 필요</a><a class="l3" href="#6-1-집계-규칙">6.1 집계 규칙</a><a class="l3" href="#6-2-일별">6.2 일별</a><a class="l3" href="#6-3-월별">6.3 월별</a><a class="l2" href="#7-설정-app-dashboard-settings-tsx">7. 설정 (app/dashboard/settings.tsx)</a><a class="l2" href="#8-알림-기기-동작">8. 알림 · 기기 동작</a><a class="l2" href="#9-be가-맡아야-할-일-앱-코드에서-추론">9. BE가 맡아야 할 일 (앱 코드에서 추론)</a><a class="l2" href="#10-앱이-임의로-정한-규칙-be와-어긋날-수-있는-곳">10. 앱이 임의로 정한 규칙 (BE와 어긋날 수 있는 곳)</a><a class="l2" href="#11-아직-없는-기능-분석-단계에서-나왔지만-미구현">11. 아직 없는 기능 (분석 단계에서 나왔지만 미구현)</a></nav><main><h1 id="ormo-관리자-앱-기능-명세-현재-코드-기준">ORMO 관리자 앱 기능 명세 (현재 코드 기준)</h1>
+<p>BE 코드베이스와 대조하기 위해 현재 앱 코드에서 추출한 명세입니다.</p>
+<ul><li>범위: 매장 점주용 태블릿(가로) 앱. 계정은 지점당 1개, 회원가입 없음.</li><li>데이터는 전부 로컬 mock 상태(React Context)이며 BE 연동은 아직 없습니다. 아래 "BE가 맡아야 할 일"은 앱 코드에서 역으로 추론한 것입니다.</li><li>표기: <span class="badge badge-app">앱</span> 앱 안에서 동작이 구현된 것 / <span class="badge badge-mock">mock</span> BE가 생기면 제거될 임시 동작 / <span class="badge badge-assume">가정</span> 앱이 임의로 정한 규칙(BE 확인 필요).</li><li>코드 위치는 <code>src/</code> 기준입니다.</li></ul>
+<hr>
+<h2 id="1-도메인-모델">1. 도메인 모델</h2>
+<h3 id="store-types-index-ts">Store (<code>types/index.ts</code>)</h3>
+<div class="table-wrap"><table><thead><tr><th>필드</th><th>설명</th></tr></thead><tbody><tr><td>id, name, school</td><td>지점 식별/표시</td></tr><tr><td>status</td><td><code>OPEN</code> / <code>PAUSED</code> / <code>CLOSED</code></td></tr><tr><td>pausedUntil?, pauseReason?</td><td>PAUSED일 때만 의미. <code>pausedUntil</code> 없음 = 직접 해제할 때까지</td></tr><tr><td>openTime, closeTime</td><td><code>HH:MM</code>(24h), 하루 한 구간</td></tr><tr><td>commissionRate</td><td>플랫폼 수수료율(0.05 = 5%). BE에서 내려줄 값</td></tr><tr><td>discardAfterMinutes</td><td>조리 완료 후 자체 폐기 가능해지는 시간(분)</td></tr></tbody></table></div>
+<h3 id="account">Account</h3>
+<p><code>loginId</code>, <code>password</code>, <code>secondaryPassword</code>(2차 비밀번호, 숫자 4자리), <code>storeId</code>. 계정당 2차 비밀번호가 따로 있습니다. 지점당 계정이 여러 개일 수 있고 권한 구분은 없습니다.</p>
+<h3 id="menuitem">MenuItem</h3>
+<p><code>storeId</code>, <code>category</code>(<code>ESPRESSO</code>/<code>NON_COFFEE</code>/<code>TEA</code>/<code>DESSERT</code>), <code>name</code>, <code>description</code>, <code>price</code>, <code>soldOut</code>, <code>isHot</code>(BE 컬럼 가정, 앱에서 수정 UI 없음), <code>isNew?</code>.</p>
+<h3 id="order">Order</h3>
+<div class="table-wrap"><table><thead><tr><th>필드</th><th>설명</th></tr></thead><tbody><tr><td>orderNo</td><td>예: <code>BW-114068</code></td></tr><tr><td>customerName</td><td>고객 이름</td></tr><tr><td>status</td><td><code>REQUESTED</code> <code>MAKING</code> <code>READY</code> <code>COMPLETED</code> <code>REJECTED</code> <code>CANCELED</code> <code>UNCLAIMED</code></td></tr><tr><td>lines[]</td><td>아래 OrderLine</td></tr><tr><td>totalPrice</td><td>최초 결제 금액</td></tr><tr><td>couponAmount, couponType?</td><td>쿠폰으로 결제한 금액(0이면 일반 주문), <code>DRINK_VOUCHER</code>/<code>AMOUNT_VOUCHER</code></td></tr><tr><td>partialCancelPolicy</td><td>고객이 고른 정책: <code>ALLOW_PARTIAL</code> / <code>CANCEL_ALL</code></td></tr><tr><td>rejectReason?</td><td><code>OUT_OF_STOCK</code> <code>BUSY</code> <code>STORE_CIRCUMSTANCES</code> <code>TIMEOUT</code></td></tr><tr><td>createdAt, expiresAt</td><td>expiresAt = 접수 만료 시각(createdAt + 10분)</td></tr><tr><td>readyAt?</td><td>조리 완료 시각</td></tr><tr><td>refundedAt?</td><td>픽업 후 마지막 환불 시각</td></tr><tr><td>updatedAt</td><td>마지막 상태 변경 시각</td></tr></tbody></table></div>
+<h3 id="orderline">OrderLine</h3>
+<p><code>menuItemId</code>, <code>name</code>, <code>price</code>(주문 시점 단가), <code>qty</code>, <code>options[]</code>(<code>TEMPERATURE</code>: HOT/ICE, <code>SIZE</code>: R/L), <code>canceled</code>(수락 전 부분 취소), <code>refundedQty?</code>(픽업 후 환불한 수량).</p>
+<hr>
+<h2 id="2-인증-2차-비밀번호">2. 인증 · 2차 비밀번호</h2>
+<ul><li>로그인: 아이디 + 비밀번호만. 실패 시 "아이디 또는 비밀번호가 올바르지 않습니다." 회원가입, 지점 선택 화면 없음. 로그인 상태는 앱 메모리에만 있습니다(자동 로그인 없음). 비밀번호는 현재 평문 비교입니다 [mock].</li><li>2차 비밀번호(PIN, 숫자 4자리) 입력창: 4자리가 차면 즉시 검증, 틀리면 점이 붉어지고 입력 초기화. 시도 횟수 제한이나 잠금은 없습니다. 검증을 앱 안에서 합니다 [mock].</li><li><strong>PIN이 필요한 곳</strong><ul><li>메뉴: <code>메뉴 관리</code>(추가/삭제 창 열기), <code>수정</code></li><li><code>매출 조회</code> 화면 전체(들어갈 때 1회, 화면을 벗어나면 다시 잠김)</li><li>설정: 비밀번호 변경, 2차 비밀번호 변경, 영업시간 수정, 자체 폐기 시간(설정 화면에 머무는 동안 1회만 입력)</li></ul></li><li><strong>PIN이 필요 없는 곳</strong>: 주문 수락/거절/조리 완료/픽업 완료/자체 폐기/부분 취소, <strong>환불</strong>, 영업 상태 변경, 품절 처리·해제(일괄 포함), 알림음 설정, 오늘 처리 내역 조회.</li><li>비밀번호 변경: 현재 비밀번호 확인, 새 비밀번호 6자 이상, 확인 입력 일치.</li><li>2차 비밀번호 변경: 현재 PIN 확인, 새 PIN 숫자 4자리, 확인 입력 일치.</li></ul>
+<hr>
+<h2 id="3-주문-관리-app-dashboard-index-tsx">3. 주문 관리 (<code>app/dashboard/index.tsx</code>)</h2>
+<p>화면은 3열 보드입니다: <strong>접수 대기(REQUESTED) / 제조중(MAKING) / 픽업 대기(READY)</strong>. 정렬은 접수 대기·제조중은 <code>createdAt</code> 오름차순, 픽업 대기는 <code>readyAt</code> 오름차순입니다.</p>
+<h3 id="3-1-상태-전이-lib-order-ts">3.1 상태 전이 (<code>lib/order.ts</code>)</h3>
+<pre><code>REQUESTED → MAKING | REJECTED | CANCELED(고객 취소, 앱에 버튼 없음)
+MAKING    → READY
+READY     → COMPLETED | UNCLAIMED
+COMPLETED / REJECTED / CANCELED / UNCLAIMED → (종료)</code></pre>
+<ul><li>허용되지 않은 전이는 reducer에서 무시합니다(더블 탭, 수락 후 취소 방지).</li><li><strong>수락 후에는 누구도 취소할 수 없습니다</strong>(운영 결정).</li></ul>
+<h3 id="3-2-주문-카드">3.2 주문 카드</h3>
+<p>주문번호, 경과 시간("N분 전"), 고객 이름, 메뉴 줄(수량 박스 + 메뉴명 + 옵션 칩 + 줄 금액), 합계 금액.</p>
+<ul><li>수량 2 이상은 파란 박스로 강조. 부분 취소된 줄은 취소선.</li><li>REQUESTED: 부분 취소 정책 배지(허용/전체 취소), "자동 거절까지 mm:ss"(2분 이하 빨강 + 카드 빨간 테두리).</li><li>쿠폰 주문: "음료 교환권 사용"/"금액권 사용" 배지, "카드 ○원 · 쿠폰 ○원" 표시.</li><li>READY: "준비 완료 후 N분", 자체 폐기까지 남은 시간 / 가능해지면 주황 테두리 + 경고.</li><li>부분 취소가 있으면 "부분 취소 환불 ○원" 표시, 합계는 환불을 뺀 금액입니다.</li></ul>
+<h3 id="3-3-동작">3.3 동작</h3>
+<div class="table-wrap"><table><thead><tr><th>동작</th><th>조건</th><th>결과</th></tr></thead><tbody><tr><td>수락</td><td>REQUESTED</td><td>MAKING. 확인창 없음, 토스트</td></tr><tr><td>거절</td><td>REQUESTED</td><td>사유 선택 필수 → REJECTED. 결제 전액 취소(쿠폰은 복원)를 안내하고 되돌릴 수 없다는 문구를 보여줌</td></tr><tr><td>일부 메뉴만 취소</td><td>REQUESTED + <code>ALLOW_PARTIAL</code> + 남은 메뉴 2줄 이상</td><td>선택한 <strong>줄 단위</strong>(수량 단위 아님)로 <code>canceled=true</code>. 전체를 취소하려면 거절을 쓰라고 안내. 되돌릴 수 없음</td></tr><tr><td>조리 완료</td><td>MAKING</td><td>READY, <code>readyAt</code> 기록</td></tr><tr><td>픽업 완료</td><td>READY</td><td>COMPLETED</td></tr><tr><td>자체 폐기</td><td>READY + 현재 ≥ (<code>readyAt</code> + <code>discardAfterMinutes</code>)</td><td>UNCLAIMED. 확인창, 되돌릴 수 없음</td></tr></tbody></table></div>
+<ul><li><code>CANCEL_ALL</code> 정책 주문에는 부분 취소 버튼이 없고 "일부 메뉴를 만들 수 없으면 거절(전체 취소)해 주세요." 안내가 나옵니다.</li><li><strong>거절 사유</strong>(선택지 3개, 순서 고정): 재료 소진 → 주문 폭주 → 매장 사정. <code>TIMEOUT</code>(접수 시간 초과)은 시스템 전용. 재료 소진을 고르면 그 주문의 메뉴 중 함께 품절 처리할 메뉴를 고를 수 있고, 거절과 품절 처리가 한 번에 반영됩니다.</li><li><strong>실행 취소</strong>: <code>조리 완료</code>(READY→MAKING)와 <code>픽업 완료</code>(COMPLETED→READY)만 가능. 토스트 버튼은 5초 동안 보이고, 앱이 처리한 시각(<code>updatedAt</code>) 기준 15초가 지나면 거부합니다. 환불 이력이 있는 주문은 불가. 수락/거절/자체 폐기는 불가.</li><li><strong>접수 시간 초과 자동 거절</strong>: 10분(<code>ORDER_ACCEPT_TIMEOUT_MINUTES</code>). <code>expiresAt</code>이 지난 REQUESTED 주문을 앱이 1초마다 확인해 <code>REJECTED(TIMEOUT)</code>로 바꾸고 토스트를 띄움 <span class="badge badge-mock">mock</span>. BE가 처리하면 앱은 상태만 받습니다.</li></ul>
+<h3 id="3-4-오늘-처리-내역-components-recent-orders-modal-tsx">3.4 오늘 처리 내역 (<code>components/recent-orders-modal.tsx</code>)</h3>
+<ul><li>대상: 해당 매장 주문 중 상태가 <code>COMPLETED</code> <code>UNCLAIMED</code> <code>REJECTED</code> <code>CANCELED</code>이고 <strong><code>createdAt</code>이 오늘인 것</strong>. 최신 처리(<code>updatedAt</code>) 순.</li><li>표시: 주문번호 · 이름, 메뉴(옵션 포함, 환불된 수량 표기), <strong>금액</strong>(취소/거절은 원금액 취소선, 환불이 있으면 "환불 -○원"), 상태 라벨(픽업 완료 / 미수령 폐기 / 고객 취소 / 자동 거절 / 거절 · 사유), 처리 시각.</li><li>검색: 주문번호 또는 이름. 필터: 전체 / 픽업 완료 / 거절·취소 / 미수령(건수 표시).</li></ul>
+<h3 id="3-5-픽업-후-환불-components-refund-modal-tsx">3.5 픽업 후 환불 (<code>components/refund-modal.tsx</code>)</h3>
+<ul><li><strong>조건</strong>: <code>COMPLETED</code>이고 환불 가능한 수량이 남은 주문(오늘 처리 내역 목록의 <code>환불</code> 버튼). 미수령/거절/취소 주문은 불가.</li><li><strong>2차 비밀번호 없음.</strong></li><li>메뉴별로 환불 수량을 −/+로 선택(최대 = <code>qty - refundedQty</code>, <code>canceled</code> 줄 제외), <code>전체 선택/선택 해제</code>. 환불 금액 / 환불 후 주문 금액 표시. 쿠폰 주문이면 "카드 ○원 · 쿠폰 ○원(복원)"으로 나눠 보여줌.</li><li>이후 한 번 더 확인("○원을 환불할까요?") → 완료 시 토스트, 처리 내역 목록으로 복귀.</li><li>같은 주문을 여러 번 부분 환불할 수 있고, 다 환불하면 환불 버튼이 사라집니다.</li><li>환불 사유 입력, 기간 제한(오늘 주문만 보임), 환불 이력 목록은 없습니다.</li><li>환불 후에는 <code>netTotal = totalPrice - 부분취소금액 - 환불금액</code>이고, 전액 환불된 주문은 매출 건수·평균에서 빠집니다.</li><li>카드/쿠폰 안분은 쿠폰 금액 × 환불액 ÷ 총액으로 <strong>비례 계산</strong>합니다 [가정]. BE가 정확한 분할을 내려줘야 합니다.</li></ul>
+<hr>
+<h2 id="4-영업-상태-영업시간-components-store-status-control-tsx-store-schedule-tsx">4. 영업 상태 · 영업시간 (<code>components/store-status-control.tsx</code>, <code>store-schedule.tsx</code>)</h2>
+<ul><li>상단 컨트롤: <code>영업중</code> / <code>일시정지</code> / <code>마감</code>. 상태를 바꾸면 이전의 일시정지 정보가 지워집니다.</li><li><strong>일시정지</strong>: 재개 시간(10/20/30/60분 또는 "직접 해제") + 사유(주문 혼잡 <code>BUSY</code> / 재료 준비 <code>PREP</code> / 휴식 <code>BREAK</code>). 상단에 "사유 · mm:ss 후 자동 재개" 표시. <code>pausedUntil</code>이 지나면 앱이 자동으로 OPEN으로 바꾸고 토스트 <strong>[앱, BE도 같은 규칙 필요]</strong>.</li><li><strong>마감</strong>: 처리하지 않은 주문(접수 대기+제조중+픽업 대기)이 있으면 건수를 보여주는 확인창. 마감해도 기존 주문 처리는 계속 가능("새 주문은 받지 않지만").</li><li><strong>자동 마감</strong>: 시계가 <code>closeTime</code>을 <strong>넘어가는 순간</strong>(5초 간격 확인) 상태가 CLOSED가 아니면 CLOSED로 바꾸고 토스트. 이후 점주가 수동으로 열면 그대로 유지됩니다(넘어가는 순간만 판정). 자정을 넘기는 영업시간은 지원하지 않습니다(분 단위 시각이 이전보다 작아지면 판정 건너뜀).</li><li><strong>자동 개점 없음</strong>: <code>openTime</code>을 넘어가는 순간(또는 앱 시작 시 CLOSED인데 영업시간 안) "영업 시작 시간입니다. 영업을 시작할까요?" 배너 → <code>영업 시작</code> / <code>나중에</code>.</li><li>영업시간 수정(설정, PIN): <code>HH:MM</code> 형식, <code>openTime &lt; closeTime</code>(문자열 비교). <strong>요일별 시간/휴무일 없음</strong>.</li></ul>
+<hr>
+<h2 id="5-메뉴-관리-app-dashboard-menu-tsx">5. 메뉴 관리 (<code>app/dashboard/menu.tsx</code>)</h2>
+<ul><li>카테고리 탭(에스프레소/논커피/티/디저트) 안에 카드 그리드: 이름, 설명(2줄), 가격, HOT 배지, 판매중/품절 배지(품절은 흐리게).</li><li>카드 탭 → 액션 시트: <code>수정</code>(PIN) / <code>품절 처리</code>·<code>판매 재개</code>(PIN 없음).</li><li><code>메뉴 관리</code>(PIN) 창: 현재 카테고리에 메뉴 추가(메뉴명·설명·가격, 이름과 가격 필수) + 등록된 메뉴 삭제(삭제 확인 없음, 즉시 삭제).</li><li><code>수정</code>(PIN): 이름/설명/가격만 수정. 카테고리 이동, 이미지, 옵션(온도/사이즈) 관리, <code>isHot</code> 수정은 없습니다.</li><li><strong>일괄 품절</strong>: 선택 모드에서 카드를 여러 개(카테고리를 넘나들며) 선택, <code>이 카테고리 전체 선택</code>, <code>품절 처리</code> / <code>판매 재개</code>. 품절 처리 시 접수 대기 주문에 해당 메뉴가 있으면 "접수 대기 주문 N건에 ... 포함" 경고 토스트(주문은 자동으로 바뀌지 않음).</li><li>품절은 날짜/시간 제한 없이 직접 풀 때까지 유지됩니다("오늘만 품절"과 "판매 중단" 구분 없음). 신규 메뉴는 항상 <code>soldOut=false</code>, <code>isHot=false</code>로 생성됩니다.</li></ul>
+<hr>
+<h2 id="6-매출-조회-app-dashboard-sales-tsx-components-sales-lib-sales-ts-pin-필요">6. 매출 조회 (<code>app/dashboard/sales.tsx</code>, <code>components/sales/*</code>, <code>lib/sales.ts</code>) — PIN 필요</h2>
+<h3 id="6-1-집계-규칙">6.1 집계 규칙</h3>
+<ul><li><strong>매출 주문</strong> = 상태가 <code>COMPLETED</code> 또는 <code>UNCLAIMED</code>이고 환불 반영 후 금액(<code>netTotal</code>)이 0보다 큰 주문. 즉 <strong>미수령 폐기 주문은 매출에 포함</strong> [가정: 결제는 유지, 환불 없음].</li><li>주문 금액 = <code>totalPrice - 수락 전 부분 취소 금액 - 픽업 후 환불 금액</code>.</li><li>카드분/쿠폰분 = 쿠폰 금액 비례 안분(<code>paymentSplit</code>). 총 매출 = 카드분 + 쿠폰분. 평균 객단가 = 매출 ÷ 건수(반올림).</li><li><strong>날짜 기준은 <code>createdAt</code>(주문 시각)</strong>입니다. 처리/완료 시각이 아닙니다.</li><li>메뉴별 소계: 메뉴명 기준 수량·금액 합산(부분 취소·환불 수량 제외), 수량 내림차순.</li></ul>
+<h3 id="6-2-일별">6.2 일별</h3>
+<p>날짜 이동(◀ ▶, 오늘), 달력으로 날짜 선택(미래 선택 불가). 통계 3개(총 매출 + 카드/쿠폰, 주문 건수, 평균 객단가). 주문 내역 필터 <code>처리 완료</code>(기본) / <code>취소</code>(거절+고객 취소) / <code>미수령</code> / <code>전체보기</code>, 10건씩 <code>더보기</code>. 행: 주문번호, 메뉴, 시각, 쿠폰 배지, 상태 배지(고객 취소/자동 거절/매장 거절/미수령 폐기/부분 취소/부분·전액 환불), 금액. 메뉴별 소계 표.</p>
+<h3 id="6-3-월별">6.3 월별</h3>
+<p>통계 3개 + <strong>수수료</strong>(<code>commissionRate</code>, 카드분/쿠폰분 따로 반올림해 합산) + <strong>예상 정산 금액</strong>(= 월 매출 − 수수료, <strong>월별 화면에만</strong> 표시). 쿠폰 매출에도 같은 수수료율을 적용하고 카드분/쿠폰분을 구분해 보여줍니다. 달력 칸에는 일 매출 약식 금액. 날짜 탭 → 그날의 통계 창 → <code>자세히 보기</code>로 일별 화면 이동.</p>
+<hr>
+<h2 id="7-설정-app-dashboard-settings-tsx">7. 설정 (<code>app/dashboard/settings.tsx</code>)</h2>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>PIN</th><th>내용</th></tr></thead><tbody><tr><td>알림음</td><td>없음</td><td>켜기/끄기, 알림음 선택(현재 1종 <code>CAFE_CHIME</code>). <strong>이 기기에만</strong> AsyncStorage(<code>ormo.device-settings.v1</code>)로 저장</td></tr><tr><td>비밀번호 변경</td><td>필요</td><td>6자 이상</td></tr><tr><td>2차 비밀번호 변경</td><td>필요</td><td>숫자 4자리</td></tr><tr><td>영업시간 수정</td><td>필요</td><td><code>HH:MM</code>, open &lt; close</td></tr><tr><td>자체 폐기 시간</td><td>필요</td><td><strong>10~30분 정수, 기본 20분.</strong> <strong>마감(CLOSED) 상태에서만 수정 가능.</strong> 저장값은 고객 앱에 "조리 완료 후 N분 안에 픽업해 주세요"로 안내될 값(BE 전달 필요)</td></tr></tbody></table></div>
+<hr>
+<h2 id="8-알림-기기-동작">8. 알림 · 기기 동작</h2>
+<ul><li><strong>새 주문 알림</strong>: 로그인 이후 새로 생긴 REQUESTED 주문마다 알림음을 즉시 재생하고, <code>확인</code>을 누르거나 주문을 처리할 때까지 7초마다 반복합니다. 상단 배너 "새 주문 N건이 도착했습니다". 로그인 시점에 이미 있던 대기 주문은 울리지 않습니다. 알림음이 꺼져 있으면 배너만 표시합니다. 무음 모드에서도 재생하도록 오디오 모드를 설정합니다(실기기 미검증).</li><li><strong>연결 끊김 배너</strong>: <code>isConnected === false</code> 또는 <code>isInternetReachable === false</code>이면 "새 주문을 받을 수 없으니 와이파이를 확인해 주세요" 배너, 복구되면 토스트. 이 판정은 기기 인터넷 상태 기준이며 BE 연결(heartbeat) 확인은 아닙니다.</li><li><strong>화면 꺼짐 방지</strong>: 로그인 상태(대시보드)에서 <code>expo-keep-awake</code>로 항상 켜 둠.</li><li><strong>토스트</strong>: 수락/조리 완료/픽업 완료/거절/품절/환불/영업 상태 변경 등. 최대 3개 쌓임.</li><li><strong>가로 고정</strong>: <code>orientation: landscape</code>, iPad는 전체 화면 필수, 라이트 테마 전용.</li></ul>
+<hr>
+<h2 id="9-be가-맡아야-할-일-앱-코드에서-추론">9. BE가 맡아야 할 일 (앱 코드에서 추론)</h2>
+<p>아래는 앱이 현재 mock으로 대신하고 있는 동작입니다. BE 명세와 대조할 항목입니다.</p>
+<ol><li><strong>인증</strong>: 로그인(아이디/비밀번호 → 지점 계정), 비밀번호 변경, <strong>2차 비밀번호 검증·변경</strong>(검증을 서버에서, 실패 횟수 제한 필요), 토큰 관리.</li><li><strong>주문 수신/푸시</strong>: 새 주문을 실시간으로 앱에 전달(WebSocket/FCM 등), 주문 상태 변경 API(수락, 거절+사유, 부분 취소(줄 단위), 조리 완료, 픽업 완료, 자체 폐기, 실행 취소, 픽업 후 환불(줄+수량)).</li><li><strong>서버 측 규칙 강제</strong>: 상태 전이 검증, 수락 후 취소 금지, 접수 10분 초과 자동 거절(+결제 취소), 자체 폐기 가능 시간(<code>readyAt + discardAfterMinutes</code>) 검증, 부분 취소 정책(<code>ALLOW_PARTIAL</code>일 때만), 환불 가능 수량 검증, 실행 취소 허용 시간(15초) 검증.</li><li><strong>결제 처리</strong>: 거절/부분 취소/환불 시 카드 환불 + 쿠폰 복원(카드분/쿠폰분 정확한 안분), 수수료율(<code>commissionRate</code>) 제공.</li><li><strong>영업 상태</strong>: 상태/일시정지(기한, 사유)/영업시간을 서버에 저장하고 같은 규칙(자동 마감, 일시정지 자동 재개)을 서버도 적용. 앱의 자동 처리는 태블릿 쪽 보조입니다. 고객 앱의 주문 가능 여부 반영.</li><li><strong>메뉴</strong>: 메뉴 목록/추가/수정/삭제/품절 일괄 변경 API, 카테고리 enum, <code>isHot</code> 컬럼.</li><li><strong>자체 폐기 시간 연동</strong>: 매장별 값(10~30분, 기본 20분)을 저장하고 고객 앱에 전달. 값이 바뀌면 기존 READY 주문에 적용할지 정책 결정 필요(앱은 현재 매장 값으로 즉시 재계산).</li><li><strong>매출 조회 API</strong>: 기간(일/월)별 주문, 취소/미수령/환불 반영 집계. 일별 달력 일 매출, 월별 수수료/예상 정산.</li><li><strong>mock 제거 대상</strong>: <code>OrderTimeoutWatcher</code>(자동 거절), <code>simulateIncomingOrder</code>(개발용 "테스트 주문 받기" 버튼, <code>__DEV__</code> 전용), <code>StoreSchedule</code>의 로컬 자동 마감/재개, 로컬 PIN 검증, 로컬 데이터(<code>data/mock.ts</code>).</li></ol>
+<h2 id="10-앱이-임의로-정한-규칙-be와-어긋날-수-있는-곳">10. 앱이 임의로 정한 규칙 (BE와 어긋날 수 있는 곳)</h2>
+<ul><li>미수령 폐기(UNCLAIMED) 주문을 <strong>매출 포함</strong>으로 집계.</li><li>매출·처리 내역의 날짜 기준이 <strong>주문 시각(<code>createdAt</code>)</strong>. 환불은 환불한 날이 아니라 원주문 날짜의 매출에서 차감됩니다.</li><li>쿠폰 포함 주문의 카드/쿠폰 안분을 <strong>비례 계산</strong>. 수수료는 쿠폰 매출에도 동일 적용(운영 결정).</li><li>환불은 "오늘 처리 내역"에 보이는 <strong>당일 주문만</strong> 가능, 사유 입력 없음, PIN 없음.</li><li>부분 취소는 줄 단위(수량 단위 아님), 환불은 줄 + 수량 단위.</li><li>영업시간은 하루 한 구간(자정 넘김 불가), 요일별/휴무일 없음.</li><li>2차 비밀번호는 계정당 1개, 권한 구분(직원/점주) 없음.</li><li>알림음 설정은 서버가 아니라 기기별 로컬 저장.</li></ul>
+<h2 id="11-아직-없는-기능-분석-단계에서-나왔지만-미구현">11. 아직 없는 기능 (분석 단계에서 나왔지만 미구현)</h2>
+<p>요일별 영업시간/휴무일, 마감 시 미처리·미수령 주문 정리 절차, PIN 무조작 자동 재잠금, 고객 이름 마스킹, 짧은 픽업번호, 메뉴 숨김 vs 삭제, "오늘만 품절" vs "판매 중단", 메뉴 이미지/옵션 관리, BE heartbeat 기반 연결 상태, 환불 사유/이력, 어제 이전 주문 환불.</p></main></div>
+</body>
+</html>

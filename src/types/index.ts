@@ -62,7 +62,10 @@ export interface OrderLine {
   price: number;
   qty: number;
   options: OrderLineOption[];
+  // Canceled before acceptance (partial cancel).
   canceled: boolean;
+  // How many of qty were refunded after pickup (partial refund). Missing means none.
+  refundedQty?: number;
 }
 
 export interface Order {
@@ -84,5 +87,7 @@ export interface Order {
   // The backend auto-rejects an order still REQUESTED at this time.
   expiresAt: number;
   readyAt?: number;
+  // Last time part of a picked-up order was refunded.
+  refundedAt?: number;
   updatedAt: number;
 }
